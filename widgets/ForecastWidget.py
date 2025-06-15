@@ -105,19 +105,16 @@ class ForecastWidget(QFrame):
         self.timer.start(config.wx_settings.forecast_refresh * 60 * 1000)
 
     def getForecast(self):
+        print("requesting forecast")
         self.weather_provider.getForecast(self.onUpdatedData)
 
     def onUpdatedData(self, data_list: list[ForecastData]):
-        #if len(data_list) != self.layout().count():
-        #    print(f"mismatched list size. data size:{len(data_list)} layout widgets: {self.layout().count()}")
-
-        #else:
-            count = min(self.layout().count(), len(data_list))
-            #for i in range(self.layout().count()):
-            for i in range(count):
-                forecast_entry_widget = self.layout().itemAt(i).widget()
-                data = data_list[i]
-                forecast_entry_widget.onUpdatedData(data)
+        print("updating forecast")
+        count = min(self.layout().count(), len(data_list))
+        for i in range(count):
+            forecast_entry_widget = self.layout().itemAt(i).widget()
+            data = data_list[i]
+            forecast_entry_widget.onUpdatedData(data)
 
     def cleanup(self):
         self.timer.stop()

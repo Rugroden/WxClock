@@ -1,8 +1,13 @@
 import os
 
+from PyQt6.QtCore import QSize
+
 ASSETS_DIR = "assets"
 BACKGROUNDS_DIR = "backgrounds"
 ICONS_DIR = "icons"
+MAP_CACHE_DIR = "map_cache"
+TILE_CACHE_DIR = "tile_cache"
+
 
 class Icons:
     CLEAR_DAY = "clear-day"
@@ -25,6 +30,36 @@ class AssetUtils:
     @staticmethod
     def getBackgroundsPath():
         return os.path.join(AssetUtils.getAssetsPath(), BACKGROUNDS_DIR)
+
+    @staticmethod
+    def getMapCachePath():
+        return os.path.join(AssetUtils.getAssetsPath(), MAP_CACHE_DIR)
+
+    @staticmethod
+    def getCachedMapFile(
+            latitude: float,
+            longitude: float,
+            zoom: int,
+            size: QSize
+    ):
+        base_path = AssetUtils.getMapCachePath()
+        file_name = f"{latitude}_{longitude}_{zoom}_{size.width()}x{size.height()}.png"
+        return os.path.join(base_path, file_name)
+
+    @staticmethod
+    def getTileCachePath():
+        return os.path.join(AssetUtils.getAssetsPath(), TILE_CACHE_DIR)
+
+    @staticmethod
+    def getCachedTileFile(
+            latitude: float,
+            longitude: float,
+            zoom: int,
+            size: QSize
+    ):
+        base_path = AssetUtils.getTileCachePath()
+        file_name = f"{latitude}_{longitude}_{zoom}_{size.width()}x{size.height()}.png"
+        return os.path.join(base_path, file_name)
 
     @staticmethod
     def getColorPath(assets_color):

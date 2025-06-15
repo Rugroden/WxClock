@@ -1,9 +1,16 @@
 from abc import abstractmethod
+from typing import Callable
 
-class ProviderKey:
-    RAIN_VIEWER = 0
+from PyQt6.QtCore import QObject
 
-class RadarProvider:
+from radars.RadarData import RadarData, SizeData
+
+
+class RadarProvider(QObject):
     @abstractmethod
-    def getRadar(self, on_finished_callback):
-        print("getRadar() not implemented.")
+    def getRadar(self, on_finished_callback: Callable[[list[RadarData]], None]):
+        raise ValueError("getRadar() not implemented.")
+
+    @abstractmethod
+    def setSize(self, size_data: SizeData):
+        raise ValueError("setSize() not implemented.")

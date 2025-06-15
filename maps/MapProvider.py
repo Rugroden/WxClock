@@ -1,6 +1,16 @@
 from abc import abstractmethod
 
-class MapProvider:
+from PyQt6.QtCore import QObject, QSize
+
+
+class MapProvider(QObject):
     @abstractmethod
-    def getMap(self, on_finished_callback):
+    def getMap(
+            self,
+            callback,
+            latitude: float,
+            longitude: float,
+            zoom: int,
+            size: QSize
+    ):
         print("getMap() not implemented.")

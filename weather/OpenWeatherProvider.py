@@ -10,14 +10,21 @@ from Config import Config, Location
 from weather.WeatherProvider import WeatherProvider
 from weather.WeatherData import CurrentConditionsData, DEGREE_SYM, ForecastData, WeatherDataUtils
 
+# NOTES:
+# Could add air quality
+#   - https://openweathermap.org/api/air-pollution
+
 
 class OpenWeatherProvider(WeatherProvider):
     def __init__(self, config: Config):
         super().__init__()
         self.location = config.app_settings.location
         self.wx_settings = config.wx_settings
-        self.on_finished_callback = None
+        self.curr_cond_callback = None
+        self.forecast_callback = None
         self.net_man = QNetworkAccessManager(self)
+        self.curr_cond_reply = None
+        self.forecast_reply = None
 
     @staticmethod
     def getIconType(owm_icon: str):
@@ -58,7 +65,8 @@ class OpenWeatherProvider(WeatherProvider):
 
     def getForecast(self, on_finished_callback):
         # API Doc: https://openweathermap.org/forecast5
-        self.on_finished_callback = on_finished_callback
+        print("setting forecast callback")
+        self.forecast_callback = on_finished_callback
         coordinates = self.location[Location.Keys.COORDINATES]
         units = "metric" if self.wx_settings.is_metric else "imperial"
 
@@ -68,57 +76,68 @@ class OpenWeatherProvider(WeatherProvider):
         wx_url += "&lang=en"
         wx_url += f"&r={str(random.random())}"
         # DEBUGGING
-        #print(f"OpenWeatherProvider.getForecast(): url: {wx_url}")
+        print(f"OpenWeatherProvider.getForecast(): url: {wx_url}")
 
-        self.net_man.finished.connect(self.forecastCallback)
+        #self.net_man.finished.connect(self.forecastCallback)
         request = QNetworkRequest(QUrl(wx_url))
-        self.net_man.get(request)
+        self.forecast_reply = self.net_man.get(request)
+        self.forecast_reply.finished.connect(self.forecastCallback)
 
-    def forecastCallback(self, reply: QNetworkReply):
+    def forecastCallback(self):
+        print("fetching forecast.")
         data_list = []
-        if reply.error() != QNetworkReply.NetworkError.NoError:
+        if self.forecast_reply.error() != QNetworkReply.NetworkError.NoError:
             for _ in range(9):
-                data_list.append(ForecastData.getErrorData(reply.errorString()))
+                data_list.append(ForecastData.getErrorData(self.forecast_reply.errorString()))
 
         else:
-            json_bytes = reply.readAll()
-            json_obj = json.loads(json_bytes.data().decode("utf-8"))
+            json_bytes = self.forecast_reply.readAll()
+            json_string = json_bytes.data().decode("utf-8")
+            if json_string == "":
+                print(f"got empty JSON string for forecast: {self.forecast_reply.errorString()}")
+                for _ in range(9):
+                    data_list.append(ForecastData.getErrorData(self.forecast_reply.errorString()))
+            else:
+                json_obj = json.loads(json_string)
 
-            for i in range(0, 3):
-                data_list.append(self.buildHourlyDataFromJson(json_obj["list"][i]))
+                for i in range(0, 3):
+                    data_list.append(self.buildHourlyDataFromJson(json_obj["list"][i]))
 
-            # Days run 6am to 6am. Grab today.
-            today = datetime.now()
-            day_start = datetime(today.year, today.month, today.day, 6, 0, 0)
-            # We want to butt up against tomorrow, not be tomorrow.
-            today_seconds = (60 * 60 * 24) - 1
-            day_end = day_start + timedelta(0, today_seconds)
+                # Days run 6am to 6am. Grab today.
+                today = datetime.now()
+                day_start = datetime(today.year, today.month, today.day, 6, 0, 0)
+                # We want to butt up against tomorrow, not be tomorrow.
+                today_seconds = (60 * 60 * 24) - 1
+                day_end = day_start + timedelta(0, today_seconds)
 
-            # Separate the entries by day.
-            json_list = []
-            i = 0
-            for item in json_obj["list"]:
+                # Separate the entries by day.
+                json_list = []
+                i = 0
+                for item in json_obj["list"]:
 
-                item_timestamp = datetime.fromtimestamp(item["dt"])
-                if day_start <= item_timestamp and item_timestamp <= day_end:
-                    json_list.append(item)
-                else:
-                    data_list.append(self.buildDayDataFromJson(json_list))
-                    json_list = []
-                    json_list.append(item)
-                    day_start += timedelta(1)
-                    day_end += timedelta(1)
+                    item_timestamp = datetime.fromtimestamp(item["dt"])
+                    if day_start <= item_timestamp and item_timestamp <= day_end:
+                        json_list.append(item)
+                    else:
+                        data_list.append(self.buildDayDataFromJson(json_list))
+                        json_list = []
+                        json_list.append(item)
+                        day_start += timedelta(1)
+                        day_end += timedelta(1)
 
-                # If this was the last item and we haven't built a day for our list, do that.
-                if item == json_obj["list"][len(json_obj["list"]) - 1] and len(json_list) > 0:
-                    data_list.append(self.buildDayDataFromJson(json_list))
+                    # If this was the last item and we haven't built a day for our list, do that.
+                    if item == json_obj["list"][len(json_obj["list"]) - 1] and len(json_list) > 0:
+                        data_list.append(self.buildDayDataFromJson(json_list))
 
-        if callable(self.on_finished_callback):
-            self.on_finished_callback(data_list)
-            self.on_finished_callback = None
+        if callable(self.forecast_callback):
+            print("removing forecast callback.")
+            self.forecast_callback(data_list)
+            self.forecast_callback = None
+            self.forecast_reply.close()
+            self.forecast_reply = None
 
         else:
-            print(f"OpenWeatherProvider.onForecastFinished(): Bad callback = {self.on_finished_callback}")
+            print(f"OpenWeatherProvider.onForecastFinished(): Bad callback = {self.forecast_callback}")
 
     def buildHourlyDataFromJson(self, json_object) -> ForecastData:
         # Grab the icon and description.
@@ -149,7 +168,6 @@ class OpenWeatherProvider(WeatherProvider):
                 precip_string = f"{probability:.0f}% {precip_type} {precip_accum:.2f}{precip_unit}"
 
         # Build the temp string.
-        temp_string = ""
         main = json_object["main"]
         temp = main["temp"]
         temp_unit = "C" if self.wx_settings.is_metric else "F"
@@ -231,7 +249,8 @@ class OpenWeatherProvider(WeatherProvider):
 
     def getCurrentConditions(self, on_finished_callback):
         # API Doc: https://openweathermap.org/current
-        self.on_finished_callback = on_finished_callback
+        print("saving current conditions callback")
+        self.curr_cond_callback = on_finished_callback
         coordinates = self.location[Location.Keys.COORDINATES]
         units = "metric" if self.wx_settings.is_metric else "imperial"
 
@@ -241,62 +260,71 @@ class OpenWeatherProvider(WeatherProvider):
         wx_url += "&lang=en"
         wx_url += f"&r={str(random.random())}"
         # DEBUGGING
-        #print(f"OpenWeatherProvider.getCurrentConditions(): url: {wx_url}")
+        print(f"OpenWeatherProvider.getCurrentConditions(): url: {wx_url}")
 
-        self.net_man.finished.connect(self.currentConditionsCallback)
+        #self.net_man.finished.connect(self.currentConditionsCallback)
         request = QNetworkRequest(QUrl(wx_url))
-        self.net_man.get(request)
+        self.curr_cond_reply = self.net_man.get(request)
+        self.curr_cond_reply.finished.connect(self.currentConditionsCallback)
 
-    def currentConditionsCallback(self, reply: QNetworkReply):
-        if reply.error() != QNetworkReply.NetworkError.NoError:
-            data = CurrentConditionsData.getErrorData(reply.errorString())
+    def currentConditionsCallback(self):
+        data = ""
+        if self.curr_cond_reply.error() != QNetworkReply.NetworkError.NoError:
+            data = CurrentConditionsData.getErrorData(self.curr_cond_reply.errorString())
 
         else:
-            json_bytes = reply.readAll()
-            json_obj = json.loads(json_bytes.data().decode("utf-8"))
+            json_bytes = self.curr_cond_reply.readAll()
+            json_string = json_bytes.data().decode("utf-8")
+            if json_string == "":
+                print(f"Got bad JSON string for current conditions: {self.curr_cond_reply.errorString()}")
+            else:
+                json_obj = json.loads(json_string)
 
-            # Grab all our values from the weather JSON.
-            weather = json_obj["weather"][0]
-            icon_type = OpenWeatherProvider.getIconType(weather["icon"])
-            icon_description = weather["description"].title()
+                # Grab all our values from the weather JSON.
+                weather = json_obj["weather"][0]
+                icon_type = OpenWeatherProvider.getIconType(weather["icon"])
+                icon_description = weather["description"].title()
 
-            main = json_obj["main"]
-            temp = main["temp"]
-            temp_unit = "C" if self.wx_settings.is_metric else "F"
-            humidity = main["humidity"]
-            feels_like = main["feels_like"]
+                main = json_obj["main"]
+                temp = main["temp"]
+                temp_unit = "C" if self.wx_settings.is_metric else "F"
+                humidity = main["humidity"]
+                feels_like = main["feels_like"]
 
-            timestamp = json_obj["dt"]
-            timestamp_string = "{0:%H:%M}".format(datetime.fromtimestamp(timestamp))
+                timestamp = json_obj["dt"]
+                timestamp_string = "{0:%H:%M}".format(datetime.fromtimestamp(timestamp))
 
-            wind = json_obj["wind"]
-            speed = wind["speed"]
-            wind_degrees = wind["deg"]
-            cardinal_dir = WeatherDataUtils.getCardinalDirectionName(wind_degrees)
-            gust = wind["gust"] if "gust" in wind else None
-            wind_unit = "mph"
+                wind = json_obj["wind"]
+                speed = wind["speed"]
+                wind_degrees = wind["deg"]
+                cardinal_dir = WeatherDataUtils.getCardinalDirectionName(wind_degrees)
+                gust = wind["gust"] if "gust" in wind else None
+                wind_unit = "mph"
 
-            # Convert what we need to to metric.
-            if self.wx_settings.is_metric:
-                speed = WeatherDataUtils.mphToKmh(speed)
-                wind_unit = "km/h"
+                # Convert what we need to to metric.
+                if self.wx_settings.is_metric:
+                    speed = WeatherDataUtils.mphToKmh(speed)
+                    wind_unit = "km/h"
 
-            gust_string = "" if gust is None else f" gusting {gust:.1f}{wind_unit}"
+                gust_string = "" if gust is None else f" gusting {gust:.1f}{wind_unit}"
 
-            # Create the strings needed for the view.
-            data = CurrentConditionsData(
-                icon_type,
-                icon_description,
-                f"{temp:.1f}{DEGREE_SYM}{temp_unit}",
-                f"Humidity {humidity}%",
-                f"Wind {cardinal_dir} {speed:.1f}{wind_unit}{gust_string}",
-                f"Feels like {feels_like:.1f}{DEGREE_SYM}{temp_unit}",
-                f"Updated at {timestamp_string} from openweathermap.org",
-                ""
-            )
+                # Create the strings needed for the view.
+                data = CurrentConditionsData(
+                    icon_type,
+                    icon_description,
+                    f"{temp:.1f}{DEGREE_SYM}{temp_unit}",
+                    f"Humidity {humidity}%",
+                    f"Wind {cardinal_dir} {speed:.1f}{wind_unit}{gust_string}",
+                    f"Feels like {feels_like:.1f}{DEGREE_SYM}{temp_unit}",
+                    f"Updated at {timestamp_string} from openweathermap.org",
+                    ""
+                )
 
-        if callable(self.on_finished_callback):
-            self.on_finished_callback(data)
-            self.on_finished_callback = None
+        if callable(self.curr_cond_callback):
+            print("removing current conditions callback")
+            self.curr_cond_callback(data)
+            self.curr_cond_callback = None
+            self.curr_cond_reply.close()
+            self.curr_cond_reply = None
         else:
-            print(f"OpenWeatherProvider.currentConditionsCallback(): Bad callback = {self.on_finished_callback}")
+            print(f"OpenWeatherProvider.currentConditionsCallback(): Bad callback = {self.curr_cond_callback}")

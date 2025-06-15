@@ -1,3 +1,5 @@
+from Config import Config
+from maps.GoogleMapProvider import GoogleMapProvider
 from maps.MapProvider import MapProvider
 
 class MapData:
@@ -9,8 +11,8 @@ class ProviderKey:
 
 class MapUtils:
     @staticmethod
-    def getRadarProvider(config):
-        if config.wx_settings.radar_provider == ProviderKey.GOOGLE_MAP:
+    def getMapProvider(config: Config) -> MapProvider:
+        if config.wx_settings.map_provider == ProviderKey.GOOGLE_MAP:
             return GoogleMapProvider(config)
         else:
             return MapProvider()

@@ -9,6 +9,7 @@ from DebugUtils import ColoredFrame
 from widgets.ClockWidget import ClockWidget
 from widgets.CurrentConditions import CurrentConditions
 from widgets.ForecastWidget import ForecastWidget
+from widgets.RadarWidget import RadarWidget
 from widgets.TextWidget import TextWidget
 
 
@@ -28,12 +29,6 @@ from widgets.TextWidget import TextWidget
 #       |       |     FOOTER    |       |  10%
 #       ---------------------------------
 
-def buildRadar0():
-    return ColoredFrame([255, 255, 0, 128])
-
-def buildRadar1():
-    return ColoredFrame([0, 255, 0, 128])
-
 class MainWindow(QMainWindow):
     def __init__(self, config: Config):
         super().__init__()
@@ -45,8 +40,8 @@ class MainWindow(QMainWindow):
         # Build all our widgets.
         self.main_frame = QLabel()
         self.cur_cond_widget = CurrentConditions(self.config)
-        self.radar_0_widget = buildRadar0()
-        self.radar_1_widget = buildRadar1()
+        self.radar_0_widget = RadarWidget(self.config, self.config.wx_settings.radar_0_zoom)
+        self.radar_1_widget = RadarWidget(self.config, self.config.wx_settings.radar_1_zoom)
         self.header_widget = TextWidget(TextWidget.Position.HEADER, self.config)
         self.clock_widget = ClockWidget(self.config)
         self.footer_widget = TextWidget(TextWidget.Position.FOOTER, self.config)
@@ -103,6 +98,8 @@ class MainWindow(QMainWindow):
         self.clock_widget.cleanup()
         self.cur_cond_widget.cleanup()
         self.forecast_widget.cleanup()
+        self.radar_0_widget.cleanup()
+        self.radar_1_widget.cleanup()
 
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key.Key_F4:
