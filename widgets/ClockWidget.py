@@ -27,7 +27,7 @@ class ClockWidget(QFrame):
             style = f"""
                 color: {app_settings.color.hash_value};
                 font-family: {app_settings.font_family};
-                font-size: {float(self.clock_settings.digital_size) * app_settings.font_mult}px;
+                font-size: {int(float(self.clock_settings.digital_size) * app_settings.font_mult)}px;
                 font-weight: light;
             """
             self.clock_text_frame.setStyleSheet(style)

@@ -27,7 +27,7 @@ class TextWidget(QFrame):
         if position == TextWidget.Position.HEADER:
             style = f"""
                 color: {self.app_settings.color.hash_value};
-                font-size: {64.0 * font_mult}px;
+                font-size: {int(64.0 * font_mult)}px;
                 font-weight: normal;
             """
             self.text_box.setStyleSheet(style)
@@ -42,7 +42,7 @@ class TextWidget(QFrame):
         else:
             style = f"""
                 color: {self.app_settings.color.hash_value};
-                font-size: {50.0 * font_mult}px;
+                font-size: {int(50.0 * font_mult)}px;
                 font-weight: normal;
             """
             self.text_box.setStyleSheet(style)

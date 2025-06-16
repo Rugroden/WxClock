@@ -24,10 +24,10 @@ class ForecastEntryWidget(QFrame):
         # Build a style for our views.
         font_mult = config.app_settings.font_mult
         text_style = f"color: {self.app_color.hash_value};"
-        desc_font_size = f"font-size: {28.0 * font_mult}px;\nfont-weight: normal;"
-        precip_font_size = f"font-size: {24.0 * font_mult}px;\nfont-weight: normal;"
-        temp_font_size = f"font-size: {24.0 * font_mult}px;\nfont-weight: normal;"
-        day_font_size = f"font-size: {20.0 * font_mult}px;\nfont-weight: light;"
+        desc_font_size = f"font-size: {int(28.0 * font_mult)}px;\nfont-weight: normal;"
+        precip_font_size = f"font-size: {int(24.0 * font_mult)}px;\nfont-weight: normal;"
+        temp_font_size = f"font-size: {int(24.0 * font_mult)}px;\nfont-weight: normal;"
+        day_font_size = f"font-size: {int(20.0 * font_mult)}px;\nfont-weight: light;"
 
         self.icon_frame = QLabel(self)
         self.icon_frame.setAlignment(Qt.AlignmentFlag.AlignRight)
