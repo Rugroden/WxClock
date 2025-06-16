@@ -2,11 +2,11 @@ import json
 
 from datetime import datetime
 from PyQt6.QtCore import QSize, QUrl
-from PyQt6.QtGui import QPixmap, QImage, QPainter, QColor, QFont
-from PyQt6.QtNetwork import QNetworkReply, QNetworkAccessManager, QNetworkRequest
+from PyQt6.QtGui import QColor, QFont, QImage, QPainter, QPixmap
+from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from typing import Callable
 
-from Config import Config, Location, AppColor
+from configs.ConfigUtils import Config
 from radars.MercatorProjection import LatLng, Utils
 from radars.RadarData import RadarData, TilePathData, TileUrlsData, SizeData
 from radars.RadarProvider import RadarProvider
@@ -16,10 +16,10 @@ class RainViewerRadarProvider(RadarProvider):
         super().__init__()
 
         # Things we can set now and hold onto.
-        coordinates = config.app_settings.location[Location.Keys.COORDINATES]
-        self.lat = coordinates[0]
-        self.long = coordinates[1]
-        self.app_color = config.app_settings.color[AppColor.Keys.RGBA_KEY]
+        location = config.app_settings.location
+        self.latitude = location.latitude
+        self.longitude = location.longitude
+        self.app_color = config.app_settings.color.rgba
         self.radar_color = config.wx_settings.radar_color
         self.radar_snow = 1 if config.wx_settings.radar_snow else 0
         self.radar_smoothing = 1 if config.wx_settings.radar_smoothing else 0
@@ -30,7 +30,6 @@ class RainViewerRadarProvider(RadarProvider):
         self.callback = None
         self.current_timestamp_index = 0
         self.current_url_index = 0
-        self.host = ""
         self.reply = None
         self.rect_size = QSize(0,0)
         self.radar_data_list = []
@@ -52,7 +51,12 @@ class RainViewerRadarProvider(RadarProvider):
     def setSize(self, size_data: SizeData):
         self.zoom = size_data.zoom
         self.rect_size = size_data.size
-        corners = Utils.getCorners(LatLng(self.lat, self.long), self.zoom, self.rect_size.width(), self.rect_size.height())
+        corners = Utils.getCorners(
+            LatLng(self.latitude, self.longitude),
+            self.zoom,
+            self.rect_size.width(),
+            self.rect_size.height()
+        )
         self.corner_tiles = {
             "NW": Utils.getTileXY(LatLng(corners["N"], corners["W"]), self.zoom),
             "NE": Utils.getTileXY(LatLng(corners["N"], corners["E"]), self.zoom),
@@ -64,11 +68,11 @@ class RainViewerRadarProvider(RadarProvider):
             self.y_list.append(y)
             self.total_height += 256
             self.tiles_height += 1
+
         for x in range(int(self.corner_tiles["NW"]["X"]), int(self.corner_tiles["NE"]["X"]) + 1):
             self.x_list.append(x)
             self.total_width += 256
             self.tiles_width += 1
-
 
     def getRadar(self, callback: Callable[[list[RadarData]], None]):
         """
@@ -94,7 +98,7 @@ class RainViewerRadarProvider(RadarProvider):
                 return
             json_obj = json.loads(json_string)
 
-            self.host = json_obj["host"]
+            host = json_obj["host"]
 
             # The timestamps in the reply JSON are ordered oldest (0) to newest (len - 1).
             # We want the out data lists to also be ordered oldest (0) to newest (len - 1).
@@ -133,7 +137,7 @@ class RainViewerRadarProvider(RadarProvider):
                 url_list = []
                 for x in self.x_list:
                     for y in self.y_list:
-                        url = f"{self.host}{item.path}/{Utils.MERCATOR_RANGE}/"
+                        url = f"{host}{item.path}/{Utils.MERCATOR_RANGE}/"
                         url += f"{self.zoom}/{x}/{y}/{self.radar_color}/{self.radar_smoothing}_{self.radar_snow}.png"
 
                         url_list.append(url)
@@ -166,6 +170,7 @@ class RainViewerRadarProvider(RadarProvider):
             if callable(self.callback):
                 self.callback(self.radar_data_list)
                 self.callback = None
+
             else:
                 print(f"OpenWeatherProvider.currentConditionsCallback(): Bad callback = {self.callback}")
 
@@ -213,6 +218,7 @@ class RainViewerRadarProvider(RadarProvider):
             # If we still have tiles to grab, grab em.
             if self.tile_url_index < len(self.tile_urls_data_list[self.timestamp_index].urls):
                 self.getTilesForTimestamps(self.timestamp_index, self.tile_url_index)
+
             else:
                 # Otherwise we combine our tiles and move on to the next timestamp.
                 self.combineTiles()
@@ -237,6 +243,7 @@ class RainViewerRadarProvider(RadarProvider):
             for x in range(0, self.total_width, Utils.MERCATOR_RANGE):
                 if self.tile_image_list[tile_index].format() == QImage.Format.Format_ARGB32:
                     painter.drawImage(y, x, self.tile_image_list[tile_index])
+
                 tile_index += 1
 
         painter.end()
@@ -256,5 +263,3 @@ class RainViewerRadarProvider(RadarProvider):
         radar_pixmap = QPixmap(radar_image_2)
         radar_data = RadarData(timestamp, radar_pixmap)
         self.radar_data_list.append(radar_data)
-
-

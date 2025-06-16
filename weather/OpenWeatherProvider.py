@@ -1,19 +1,19 @@
 import json
 import random
+from typing import Any, Callable
 
 from datetime import datetime, timedelta
 from PyQt6.QtCore import QUrl
-from PyQt6.QtNetwork import QNetworkRequest, QNetworkAccessManager, QNetworkReply
+from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 
-from AssetUtils import Icons
-from Config import Config, Location
+from assets.AssetUtils import Icons
+from configs.ConfigUtils import Config, Location
 from weather.WeatherProvider import WeatherProvider
 from weather.WeatherData import CurrentConditionsData, DEGREE_SYM, ForecastData, WeatherDataUtils
 
 # NOTES:
 # Could add air quality
 #   - https://openweathermap.org/api/air-pollution
-
 
 class OpenWeatherProvider(WeatherProvider):
     def __init__(self, config: Config):
@@ -27,7 +27,7 @@ class OpenWeatherProvider(WeatherProvider):
         self.forecast_reply = None
 
     @staticmethod
-    def getIconType(owm_icon: str):
+    def getIconType(owm_icon: str) -> str:
         if owm_icon == "01d":
             return Icons.CLEAR_DAY
         elif owm_icon == "01n":
@@ -50,41 +50,37 @@ class OpenWeatherProvider(WeatherProvider):
             print(f"Unknown Open Weather Icon: {owm_icon}.png")
             return ""
 
-    def getWeather(self, on_finished_callback):
-        coordinates = self.location[Location.Keys.COORDINATES]
+    def getWeather(self, on_finished_callback: Callable[[list[Any]], None]):
         units = "metric" if self.wx_settings.is_metric else "imperial"
 
         wx_url = f"https://api.openweathermap.org/data/2.5/onecall?appid={self.wx_settings.forecast_api_key}"
-        wx_url += f"&lat={str(coordinates[0])}&lon={str(coordinates[1])}"
+        wx_url += f"&lat={self.location.latitude}&lon={self.location.longitude}"
         wx_url += f"&units={units}"
         wx_url += "&lang=en"
-        wx_url += f"&r={str(random.random())}"
+        wx_url += f"&r={random.random()}"
         print(f"OpenWeatherProvider.getWeather(): url: {wx_url}")
         print(f"OpenWeatherProvider.getWeather(): NOT IMPLEMENTED")
 
 
-    def getForecast(self, on_finished_callback):
+    def getForecast(self, on_finished_callback: Callable[[list[ForecastData]], None]):
         # API Doc: https://openweathermap.org/forecast5
-        print("setting forecast callback")
         self.forecast_callback = on_finished_callback
-        coordinates = self.location[Location.Keys.COORDINATES]
         units = "metric" if self.wx_settings.is_metric else "imperial"
 
         wx_url = f"https://api.openweathermap.org/data/2.5/forecast?appid={self.wx_settings.forecast_api_key}"
-        wx_url += f"&lat={str(coordinates[0])}&lon={str(coordinates[1])}"
+        wx_url += f"&lat={self.location.latitude}&lon={self.location.longitude}"
         wx_url += f"&units={units}"
         wx_url += "&lang=en"
-        wx_url += f"&r={str(random.random())}"
-        # DEBUGGING
-        print(f"OpenWeatherProvider.getForecast(): url: {wx_url}")
+        wx_url += f"&r={random.random()}"
 
-        #self.net_man.finished.connect(self.forecastCallback)
+        # DEBUGGING
+        #print(f"OpenWeatherProvider.getForecast(): url: {wx_url}")
+
         request = QNetworkRequest(QUrl(wx_url))
         self.forecast_reply = self.net_man.get(request)
         self.forecast_reply.finished.connect(self.forecastCallback)
 
     def forecastCallback(self):
-        print("fetching forecast.")
         data_list = []
         if self.forecast_reply.error() != QNetworkReply.NetworkError.NoError:
             for _ in range(9):
@@ -94,29 +90,29 @@ class OpenWeatherProvider(WeatherProvider):
             json_bytes = self.forecast_reply.readAll()
             json_string = json_bytes.data().decode("utf-8")
             if json_string == "":
-                print(f"got empty JSON string for forecast: {self.forecast_reply.errorString()}")
+                error_string = "OpenWeatherProvider.forecastCallback: Received empty JSON string for forecast."
                 for _ in range(9):
-                    data_list.append(ForecastData.getErrorData(self.forecast_reply.errorString()))
+                    data_list.append(ForecastData.getErrorData(error_string))
             else:
                 json_obj = json.loads(json_string)
 
+                # Fill in the next three 3-hour blocks.
                 for i in range(0, 3):
                     data_list.append(self.buildHourlyDataFromJson(json_obj["list"][i]))
 
                 # Days run 6am to 6am. Grab today.
                 today = datetime.now()
                 day_start = datetime(today.year, today.month, today.day, 6, 0, 0)
-                # We want to butt up against tomorrow, not be tomorrow.
+                # We want to butt up against tomorrow, not be tomorrow, so we do a day minus a second.
                 today_seconds = (60 * 60 * 24) - 1
                 day_end = day_start + timedelta(0, today_seconds)
 
                 # Separate the entries by day.
                 json_list = []
-                i = 0
                 for item in json_obj["list"]:
 
                     item_timestamp = datetime.fromtimestamp(item["dt"])
-                    if day_start <= item_timestamp and item_timestamp <= day_end:
+                    if day_start <= item_timestamp <= day_end:
                         json_list.append(item)
                     else:
                         data_list.append(self.buildDayDataFromJson(json_list))
@@ -130,14 +126,13 @@ class OpenWeatherProvider(WeatherProvider):
                         data_list.append(self.buildDayDataFromJson(json_list))
 
         if callable(self.forecast_callback):
-            print("removing forecast callback.")
             self.forecast_callback(data_list)
             self.forecast_callback = None
             self.forecast_reply.close()
             self.forecast_reply = None
 
         else:
-            print(f"OpenWeatherProvider.onForecastFinished(): Bad callback = {self.forecast_callback}")
+            print(f"OpenWeatherProvider.forecastCallback(): Missing callback.")
 
     def buildHourlyDataFromJson(self, json_object) -> ForecastData:
         # Grab the icon and description.
@@ -176,7 +171,6 @@ class OpenWeatherProvider(WeatherProvider):
         # Build the timestamp string.
         timestamp = json_object['dt']
         timestamp_string = "{0:%a %I:%M%p}".format(datetime.fromtimestamp(timestamp))
-
 
         return ForecastData(
             icon_type,
@@ -247,22 +241,19 @@ class OpenWeatherProvider(WeatherProvider):
             timestamp_string
         )
 
-    def getCurrentConditions(self, on_finished_callback):
+    def getCurrentConditions(self, on_finished_callback: Callable[[list[CurrentConditionsData]], None]):
         # API Doc: https://openweathermap.org/current
-        print("saving current conditions callback")
         self.curr_cond_callback = on_finished_callback
-        coordinates = self.location[Location.Keys.COORDINATES]
         units = "metric" if self.wx_settings.is_metric else "imperial"
 
         wx_url = f"http://api.openweathermap.org/data/2.5/weather?appid={self.wx_settings.forecast_api_key}"
-        wx_url += f"&lat={str(coordinates[0])}&lon={str(coordinates[1])}"
+        wx_url += f"&lat={self.location.latitude}&lon={self.location.longitude}"
         wx_url += f"&units={units}"
         wx_url += "&lang=en"
         wx_url += f"&r={str(random.random())}"
         # DEBUGGING
-        print(f"OpenWeatherProvider.getCurrentConditions(): url: {wx_url}")
+        #print(f"OpenWeatherProvider.getCurrentConditions(): url: {wx_url}")
 
-        #self.net_man.finished.connect(self.currentConditionsCallback)
         request = QNetworkRequest(QUrl(wx_url))
         self.curr_cond_reply = self.net_man.get(request)
         self.curr_cond_reply.finished.connect(self.currentConditionsCallback)
@@ -276,7 +267,9 @@ class OpenWeatherProvider(WeatherProvider):
             json_bytes = self.curr_cond_reply.readAll()
             json_string = json_bytes.data().decode("utf-8")
             if json_string == "":
-                print(f"Got bad JSON string for current conditions: {self.curr_cond_reply.errorString()}")
+                error_string = "OpenWeatherProvider.currentConditionsCallback: Received empty JSON string for current conditions."
+                data = CurrentConditionsData.getErrorData(error_string)
+
             else:
                 json_obj = json.loads(json_string)
 
@@ -321,10 +314,10 @@ class OpenWeatherProvider(WeatherProvider):
                 )
 
         if callable(self.curr_cond_callback):
-            print("removing current conditions callback")
             self.curr_cond_callback(data)
             self.curr_cond_callback = None
             self.curr_cond_reply.close()
             self.curr_cond_reply = None
+
         else:
-            print(f"OpenWeatherProvider.currentConditionsCallback(): Bad callback = {self.curr_cond_callback}")
+            print("OpenWeatherProvider.currentConditionsCallback(): Missing callback.")

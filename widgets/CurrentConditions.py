@@ -2,11 +2,10 @@ from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QFrame, QLabel, QVBoxLayout
 
-from AssetUtils import AssetUtils
-from Config import AppColor, Config
+from assets.AssetUtils import AssetUtils
+from configs.ConfigUtils import AppColor, Config
 from weather.WeatherUtils import WeatherUtils
 from weather.WeatherData import CurrentConditionsData
-
 
 #                  40%
 #       ---------------------------
@@ -32,10 +31,7 @@ class CurrentConditions(QFrame):
         self.weather_provider = WeatherUtils.getWeatherProvider(config)
 
         # Build a style for our views.
-        text_style = f"""
-                    color: {self.app_color[AppColor.Keys.VALUE_KEY]};
-                """
-
+        text_style = f"color: {self.app_color.hash_value};"
         attribution_font_size = "font-size: 20px;\nfont-weight: light;"
         regular_font_size = "font-size: 30px;\nfont-weight: normal;"
         desc_font_size = "font-size: 40px;\nfont-weight: normal;"
@@ -102,13 +98,11 @@ class CurrentConditions(QFrame):
         self.timer.timeout.connect(self.getCurrentConditions)
         self.timer.start(config.wx_settings.forecast_refresh * 60 * 1000)
 
-
     def getCurrentConditions(self):
         self.weather_provider.getCurrentConditions(self.onUpdatedData)
 
-
     def onUpdatedData(self, data: CurrentConditionsData):
-        icon_asset = AssetUtils.getIcon(self.app_color[AppColor.Keys.ASSETS_KEY], data.icon_type)
+        icon_asset = AssetUtils.getIcon(self.app_color.asset_folder, data.icon_type)
         icon_pixmap = QPixmap(icon_asset)
         width = self.icon_frame.width()
         height = self.icon_frame.height()

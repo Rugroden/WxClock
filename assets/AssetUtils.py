@@ -2,7 +2,7 @@ import os
 
 from PyQt6.QtCore import QSize
 
-ASSETS_DIR = "assets"
+ASSETS_DIR = ""
 BACKGROUNDS_DIR = "backgrounds"
 ICONS_DIR = "icons"
 MAP_CACHE_DIR = "map_cache"
@@ -30,6 +30,10 @@ class AssetUtils:
     @staticmethod
     def getBackgroundsPath():
         return os.path.join(AssetUtils.getAssetsPath(), BACKGROUNDS_DIR)
+
+    @staticmethod
+    def getBackgroundFile(width, height, file_name):
+        return f"{AssetUtils.getBackgroundsPath()}/{width}x{height}/{file_name}"
 
     @staticmethod
     def getMapCachePath():

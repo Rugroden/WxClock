@@ -1,22 +1,19 @@
-import base64
-import hashlib
-import hmac
 import os
+from typing import Callable
 
-from PyQt6.QtCore import QUrl, QSize, QSizeF
+from PyQt6.QtCore import QUrl, QSize
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtNetwork import QNetworkRequest, QNetworkAccessManager, QNetworkReply
+from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 
-from Config import Config, AppColor
+from assets.AssetUtils import AssetUtils
+from configs.ConfigUtils import Config
 from maps.MapProvider import MapProvider
-from AssetUtils import AssetUtils
-
 
 class GoogleMapProvider(MapProvider):
     def __init__(self, config: Config):
         super().__init__()
         self.api_key = config.wx_settings.map_api_key
-        self.app_color = config.app_settings.color[AppColor.Keys.HEX]
+        self.app_color = config.app_settings.color.hex_value
         self.show_marker = config.wx_settings.show_marker
         self.marker_size = config.wx_settings.marker_size
         self.on_map_callback = None
@@ -24,7 +21,7 @@ class GoogleMapProvider(MapProvider):
 
     def getMap(
             self,
-            callback,
+            callback: Callable[[QPixmap], None],
             latitude: float,
             longitude: float,
             zoom: int,
@@ -61,5 +58,6 @@ class GoogleMapProvider(MapProvider):
         if callable(self.on_map_callback):
             self.on_map_callback(pixmap)
             self.on_map_callback = None
+
         else:
             print(f"GoogleMapProvider.mapCallback(): Bad callback = {self.on_map_callback}")

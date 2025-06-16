@@ -4,8 +4,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeyEvent, QPixmap
 from PyQt6.QtWidgets import QApplication, QFrame, QGridLayout, QLabel, QMainWindow
 
-from Config import Config
-from DebugUtils import ColoredFrame
+from configs.ConfigUtils import Config
 from widgets.ClockWidget import ClockWidget
 from widgets.CurrentConditions import CurrentConditions
 from widgets.ForecastWidget import ForecastWidget
@@ -32,20 +31,19 @@ from widgets.TextWidget import TextWidget
 class MainWindow(QMainWindow):
     def __init__(self, config: Config):
         super().__init__()
-        self.config = config
 
         # Set the name of the window.
         self.setWindowTitle("WxClock")
 
         # Build all our widgets.
-        self.main_frame = QLabel()
-        self.cur_cond_widget = CurrentConditions(self.config)
-        self.radar_0_widget = RadarWidget(self.config, self.config.wx_settings.radar_0_zoom)
-        self.radar_1_widget = RadarWidget(self.config, self.config.wx_settings.radar_1_zoom)
-        self.header_widget = TextWidget(TextWidget.Position.HEADER, self.config)
-        self.clock_widget = ClockWidget(self.config)
-        self.footer_widget = TextWidget(TextWidget.Position.FOOTER, self.config)
-        self.forecast_widget = ForecastWidget(self.config)
+        self.background_frame = QLabel()
+        self.cur_cond_widget = CurrentConditions(config)
+        self.radar_0_widget = RadarWidget(config, config.wx_settings.radar_0_zoom)
+        self.radar_1_widget = RadarWidget(config, config.wx_settings.radar_1_zoom)
+        self.header_widget = TextWidget(TextWidget.Position.HEADER, config)
+        self.clock_widget = ClockWidget(config)
+        self.footer_widget = TextWidget(TextWidget.Position.FOOTER, config)
+        self.forecast_widget = ForecastWidget(config)
 
         # Left Column.
         left_column = QFrame()
@@ -83,13 +81,13 @@ class MainWindow(QMainWindow):
         main_column_grid.setColumnStretch(0, 1)
         main_column_grid.setColumnStretch(1, 2)
         main_column_grid.setColumnStretch(2, 1)
-        self.main_frame.setLayout(main_column_grid)
+        self.background_frame.setLayout(main_column_grid)
 
-        # Set up the main frame's background.
+        # Set up the background image.
         background = os.path.normpath(config.app_settings.background)
-        self.main_frame.setPixmap(QPixmap(background))
+        self.background_frame.setPixmap(QPixmap(background))
 
-        self.setCentralWidget(self.main_frame)
+        self.setCentralWidget(self.background_frame)
 
         # Make it full screen.
         self.showFullScreen()

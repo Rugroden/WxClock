@@ -4,7 +4,7 @@ from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QResizeEvent
 from PyQt6.QtWidgets import QFrame, QLabel
 
-from Config import AppColor, Config, Location
+from configs.ConfigUtils import AppColor, Config, Location
 
 class TextWidget(QFrame):
     class Position:
@@ -13,6 +13,7 @@ class TextWidget(QFrame):
 
     def __init__(self, position: int, config: Config):
         super().__init__()
+
         self.position = position
         self.app_settings = config.app_settings
         self.last_day = -1
@@ -21,7 +22,7 @@ class TextWidget(QFrame):
 
         if position == TextWidget.Position.HEADER:
             style = f"""
-                color: {self.app_settings.color[AppColor.Keys.VALUE_KEY]};
+                color: {self.app_settings.color.hash_value};
                 font-size: 64px;
                 font-weight: normal;
             """
@@ -36,13 +37,13 @@ class TextWidget(QFrame):
             self.tick()
         else:
             style = f"""
-                color: {self.app_settings.color[AppColor.Keys.VALUE_KEY]};
+                color: {self.app_settings.color.hash_value};
                 font-size: 50px;
                 font-weight: normal;
             """
             self.text_box.setStyleSheet(style)
 
-            location_name = self.app_settings.location[Location.Keys.HUMAN_NAME]
+            location_name = self.app_settings.location.human_name
             footer_string = f"Weather for {location_name}"
             self.text_box.setText(footer_string)
 
@@ -63,6 +64,4 @@ class TextWidget(QFrame):
 
             date_string = self.app_settings.date_format.format(now, sup)
             self.text_box.setText(date_string)
-            # Long date for testing.
-            #self.text_box.setText("Wednesday December 31<sup>st</sup> 2025")
 

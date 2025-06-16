@@ -5,12 +5,12 @@ from PyQt6.QtCore import QObject
 
 from radars.RadarData import RadarData, SizeData
 
-
 class RadarProvider(QObject):
+
     @abstractmethod
     def getRadar(self, on_finished_callback: Callable[[list[RadarData]], None]):
-        raise ValueError("getRadar() not implemented.")
+        raise ValueError("RadarProvider.getRadar() not implemented.")
 
     @abstractmethod
     def setSize(self, size_data: SizeData):
-        raise ValueError("setSize() not implemented.")
+        raise ValueError("RadarProvider.setSize() not implemented.")

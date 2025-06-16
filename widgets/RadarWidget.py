@@ -1,12 +1,11 @@
 import os
 
-from PyQt6.QtCore import QSizeF, Qt, QSize, QTimer
+from PyQt6.QtCore import QSize, QSizeF, Qt, QTimer
 from PyQt6.QtGui import QPixmap, QResizeEvent
 from PyQt6.QtWidgets import QFrame, QLabel, QStackedLayout
 
-from AssetUtils import AssetUtils
-from Config import Config, Location
-from DebugUtils import DebugUtils
+from assets.AssetUtils import AssetUtils
+from configs.ConfigUtils import Config, Location
 from maps.MapUtils import MapUtils
 from radars.RadarData import RadarData, SizeData
 from radars.RadarUtils import RadarUtils
@@ -16,9 +15,9 @@ class RadarWidget(QFrame):
     def __init__(self, config: Config, zoom: int):
         super().__init__()
 
-        coords = config.app_settings.location[Location.Keys.COORDINATES]
-        self.lat = coords[0]
-        self.long = coords[1]
+        location = config.app_settings.location
+        self.latitude = location.latitude
+        self.longitude = location.longitude
         self.map_provider = MapUtils.getMapProvider(config)
         self.radar_provider = RadarUtils.getRadarProvider(config)
         self.radar_refresh = config.wx_settings.radar_refresh
@@ -29,8 +28,6 @@ class RadarWidget(QFrame):
 
         self.map_frame = QLabel(self)
         self.radar_frame = QLabel(self)
-        # DEBUGGING
-        #DebugUtils.setWidgetColor(self.radar_frame, [0, 0, 255, 64])
 
         layout = QStackedLayout(self)
         layout.addWidget(self.map_frame)
@@ -45,7 +42,7 @@ class RadarWidget(QFrame):
 
         self.radar_fetch_timer = QTimer()
 
-    def getShrunkSize(self, size: QSize) -> QSize:
+    def getShrunkenSize(self, size: QSize) -> QSize:
         temp_size = size
         if size.width() > 640 or size.height() > 640:
             temp_size = QSizeF(size.width() / 2, size.height() / 2).toSize()
@@ -55,26 +52,34 @@ class RadarWidget(QFrame):
         return temp_size
 
     def setMap(self, map_pixmap: QPixmap):
-        cached_map_file = AssetUtils.getCachedMapFile(self.lat,
-                                                      self.long,
-                                                      self.file_zoom,
-                                                      map_pixmap.size()
-                                                      )
+        cached_map_file = AssetUtils.getCachedMapFile(
+            self.latitude,
+            self.longitude,
+            self.file_zoom,
+            map_pixmap.size()
+        )
         if not os.path.exists(cached_map_file):
             map_pixmap.save(cached_map_file)
 
         if map_pixmap.size() != self.size():
-            map_pixmap = map_pixmap.scaled(self.size(),
-                                           Qt.AspectRatioMode.KeepAspectRatio,
-                                           Qt.TransformationMode.SmoothTransformation
-                                           )
+            map_pixmap = map_pixmap.scaled(
+                self.size(),
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
 
         self.map_frame.setPixmap(map_pixmap)
 
     def resizeEvent(self, event: QResizeEvent):
         # On resize we kick off our map and radar stuff.
-        size = self.getShrunkSize(event.size())
-        self.map_provider.getMap(self.setMap, self.lat, self.long, self.file_zoom, size)
+        size = self.getShrunkenSize(event.size())
+        self.map_provider.getMap(
+            self.setMap,
+            self.latitude,
+            self.longitude,
+            self.file_zoom,
+            size
+        )
 
         # Now that our sizes are set, we can set up the radar provider.
         size_data = SizeData(self.file_zoom, size)
@@ -86,12 +91,10 @@ class RadarWidget(QFrame):
         self.radar_fetch_timer.start(self.radar_refresh * 60 * 1000)
 
     def getRadar(self):
-        #print("Getting Radar")
         self.radar_provider.getRadar(self.onRadar)
 
     def onRadar(self, radar_data_list: list[RadarData]):
         self.radar_data_list = radar_data_list
-        #print(f"Got {len(radar_data_list)} images for radar.")
 
     def tick(self):
         if len(self.radar_data_list) > 0:

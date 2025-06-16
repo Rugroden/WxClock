@@ -2,42 +2,17 @@ import os
 
 from datetime import datetime
 from PyQt6.QtCore import QSize, Qt, QTimer
-from PyQt6.QtGui import QPixmap, QTransform, QResizeEvent
+from PyQt6.QtGui import QPixmap, QResizeEvent, QTransform
 from PyQt6.QtWidgets import QFrame, QLabel
 
-from AssetUtils import AssetUtils
-from Config import AppColor, Config
+from assets.AssetUtils import AssetUtils
+from configs.ConfigUtils import Config
 
 
 class ClockWidget(QFrame):
-    """
-    A Class that builds a digital or analog clock.
-
-    Attributes:
-        clock_settings (ClockSettings): Clock Settings object.
-        last_time_string (str): Last time string seen for the digital clock.
-        last_minute (int): Last minute seen for the analog clock.
-
-        clock_text_frame (QLabel): Widget for digital clock.
-
-        clock_face_frame (QLabel): Widget for the analog clock face.
-        clock_face_pixmap (QPixmap): Pixmap for the analog clock face.
-        hour_hand_frame (QLabel): Widget for the hour hand.
-        hour_hand_pixmap (QPixmap): Pixmap for the hour hand.
-        minute_hand_frame (QLabel): Widget for the minute hand.
-        minute_hand_pixmap (QPixmap): Pixmap for the minute hand.
-        second_hand_frame (QLabel): Widget for the second hand.
-        second_hand_pixmap (QPixmap): Pixmap for the second hand.
-
-        timer (QTimer): Timer for updating the clock time.
-
-    Functions:
-        __init__ (ClockWidget): Initializer for the Clock Widget.
-        cleanup (None): Stops the timer on the clock.
-        tick (None): Callback for updating the clock.
-    """
     def __init__(self, config: Config):
         super().__init__()
+
         app_settings = config.app_settings
         self.clock_settings = config.clock_settings
         # last_time_string is for knowing when to update the digital clock.
@@ -50,7 +25,7 @@ class ClockWidget(QFrame):
             # The digital clock is a single text widget
             self.clock_text_frame = QLabel(self)
             style = f"""
-                color: {app_settings.color[AppColor.VALUE_KEY]};
+                color: {app_settings.color.hash_value};
                 font-family: {app_settings.font_family};
                 font-size: {self.clock_settings.digital_size}px;
                 font-weight: light;
@@ -62,7 +37,7 @@ class ClockWidget(QFrame):
             # Grab the assets, but don't draw them.
             # We resize the assets in resizeEvent().
             # Then we draw them there and on tick().
-            assets_folder = AssetUtils.getColorPath(app_settings.color[AppColor.Keys.ASSETS_KEY])
+            assets_folder = AssetUtils.getColorPath(app_settings.color.asset_folder)
             self.clock_face_pixmap =  QPixmap(os.path.normpath(assets_folder + "/clock_face.png"))
             self.hour_hand_pixmap =   QPixmap(os.path.normpath(assets_folder + "/hour_hand.png"))
             self.minute_hand_pixmap = QPixmap(os.path.normpath(assets_folder + "/min_hand.png"))
@@ -83,7 +58,6 @@ class ClockWidget(QFrame):
         self.timer.timeout.connect(self.tick)
         self.timer.start(1000)
 
-
     def resizeEvent(self, event: QResizeEvent):
         # Now that we know how big we are, we can resize and draw our stuff.
         width = event.size().width()
@@ -97,34 +71,38 @@ class ClockWidget(QFrame):
             clock_dims = min(width, height)
 
             # Resize the clock face.
-            self.clock_face_pixmap = self.clock_face_pixmap.scaled(QSize(clock_dims, clock_dims),
-                                                                   Qt.AspectRatioMode.KeepAspectRatio,
-                                                                   Qt.TransformationMode.SmoothTransformation
-                                                                   )
+            self.clock_face_pixmap = self.clock_face_pixmap.scaled(
+                QSize(clock_dims, clock_dims),
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
             self.clock_face_frame.setPixmap(self.clock_face_pixmap)
             self.clock_face_frame.setGeometry(0, 0, width, height)
 
             # Resize the second hand.
-            self.second_hand_pixmap = self.second_hand_pixmap.scaled(QSize(clock_dims, clock_dims),
-                                                                     Qt.AspectRatioMode.KeepAspectRatio,
-                                                                     Qt.TransformationMode.SmoothTransformation
-                                                                     )
+            self.second_hand_pixmap = self.second_hand_pixmap.scaled(
+                QSize(clock_dims, clock_dims),
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
             self.second_hand_frame.setPixmap(self.second_hand_pixmap)
             self.second_hand_frame.setGeometry(0, 0, width, height)
 
             # Resize the minute hand.
-            self.minute_hand_pixmap = self.minute_hand_pixmap.scaled(QSize(clock_dims, clock_dims),
-                                                                     Qt.AspectRatioMode.KeepAspectRatio,
-                                                                     Qt.TransformationMode.SmoothTransformation
-                                                                     )
+            self.minute_hand_pixmap = self.minute_hand_pixmap.scaled(
+                QSize(clock_dims, clock_dims),
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
             self.minute_hand_frame.setPixmap(self.minute_hand_pixmap)
             self.minute_hand_frame.setGeometry(0, 0, width, height)
 
             # Resize the hour hand.
-            self.hour_hand_pixmap = self.hour_hand_pixmap.scaled(QSize(clock_dims, clock_dims),
-                                                                 Qt.AspectRatioMode.KeepAspectRatio,
-                                                                 Qt.TransformationMode.SmoothTransformation
-                                                                 )
+            self.hour_hand_pixmap = self.hour_hand_pixmap.scaled(
+                QSize(clock_dims, clock_dims),
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
             self.hour_hand_frame.setPixmap(self.hour_hand_pixmap)
             self.hour_hand_frame.setGeometry(0, 0, width, height)
 
@@ -142,25 +120,27 @@ class ClockWidget(QFrame):
         else:
             # The second hand always gets updated.
             second_angle = now.second * 6
-            second_hand_pixmap = self.second_hand_pixmap.transformed(QTransform().rotate(second_angle),
-                                                                     Qt.TransformationMode.SmoothTransformation
-                                                                     )
+            second_hand_pixmap = self.second_hand_pixmap.transformed(
+                QTransform().rotate(second_angle),
+                Qt.TransformationMode.SmoothTransformation
+            )
             self.second_hand_frame.setPixmap(second_hand_pixmap)
 
             if self.last_minute != now.minute:
                 self.last_minute = now.minute
                 minute_angle = now.minute * 6
-                minute_hand_pixmap = self.minute_hand_pixmap.transformed(QTransform().rotate(minute_angle),
-                                                                         Qt.TransformationMode.SmoothTransformation
-                                                                         )
+                minute_hand_pixmap = self.minute_hand_pixmap.transformed(
+                    QTransform().rotate(minute_angle),
+                    Qt.TransformationMode.SmoothTransformation
+                )
                 self.minute_hand_frame.setPixmap(minute_hand_pixmap)
 
                 hour_angle = ((now.hour % 12) + now.minute / 60.0) * 30.0
-                hour_hand_pixmap = self.hour_hand_pixmap.transformed(QTransform().rotate(hour_angle),
-                                                                         Qt.TransformationMode.SmoothTransformation
-                                                                         )
+                hour_hand_pixmap = self.hour_hand_pixmap.transformed(
+                    QTransform().rotate(hour_angle),
+                    Qt.TransformationMode.SmoothTransformation
+                )
                 self.hour_hand_frame.setPixmap(hour_hand_pixmap)
-
 
     def cleanup(self):
         self.timer.stop()

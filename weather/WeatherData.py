@@ -1,20 +1,19 @@
-from PyQt6.QtNetwork import QNetworkReply
-
-from AssetUtils import AssetUtils, Icons
+from assets.AssetUtils import Icons
 
 DEGREE_SYM = "°"
 
 class CurrentConditionsData:
-    def __init__(self,
-                 icon_type: str,
-                 icon_description: str,
-                 temp: str,
-                 humidity: str,
-                 wind: str,
-                 feels_like_temp: str,
-                 attribution: str,
-                 extra: str = ""
-                 ):
+    def __init__(
+            self,
+            icon_type: str,
+            icon_description: str,
+            temp: str,
+            humidity: str,
+            wind: str,
+            feels_like_temp: str,
+            attribution: str,
+            extra: str = ""
+    ):
         self.icon_type = icon_type
         self.icon_description = icon_description
         self.temp = temp
@@ -33,7 +32,7 @@ class CurrentConditionsData:
                     "",
                     "",
                     "",
-                    "openweathermap.org",
+                    "",
                     ""
                 )
 
@@ -46,18 +45,19 @@ class CurrentConditionsData:
                     "Humidity 94%",
                     "Wind NW 19.6mph",
                     "Feels like 55.6°F",
-                    "19:09 openweathermap.org",
+                    "19:09 weather.site",
                     ""
                 )
 
 
 class ForecastData:
-    def __init__(self,
-                 icon_type: str,
-                 icon_description: str,
-                 precip: str,
-                 temp: str,
-                 day_time: str
+    def __init__(
+            self,
+            icon_type: str,
+            icon_description: str,
+            precip: str,
+            temp: str,
+            day_time: str
     ):
         self.icon_type = icon_type
         self.icon_description = icon_description
@@ -72,7 +72,7 @@ class ForecastData:
             error,
             "Network Error",
             "",
-            "openweathermap.org"
+            ""
         )
 
     @staticmethod

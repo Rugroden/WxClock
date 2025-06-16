@@ -1,5 +1,4 @@
-
-from Config import Config
+from configs.ConfigUtils import Config
 from weather.OpenWeatherProvider import OpenWeatherProvider
 from weather.WeatherProvider import WeatherProvider
 

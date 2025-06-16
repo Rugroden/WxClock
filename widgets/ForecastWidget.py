@@ -1,12 +1,11 @@
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QLabel
-from DebugUtils import DebugUtils
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout
 
-from AssetUtils import AssetUtils, Icons
-from Config import AppColor, Config
-from weather.WeatherUtils import WeatherUtils
+from assets.AssetUtils import AssetUtils
+from configs.ConfigUtils import AppColor, Config
 from weather.WeatherData import ForecastData
+from weather.WeatherUtils import WeatherUtils
 
 #           33%         67%
 #       -----------------------------
@@ -14,6 +13,7 @@ from weather.WeatherData import ForecastData
 #       | ICON  | PRECIP%/ TEMP     |
 #       |       |          DAY/TIME |
 #       -----------------------------
+
 class ForecastEntryWidget(QFrame):
     def __init__(self, config: Config):
         super().__init__()
@@ -22,8 +22,7 @@ class ForecastEntryWidget(QFrame):
         self.app_color = config.app_settings.color
 
         # Build a style for our views.
-        text_style = f"color: {self.app_color[AppColor.Keys.VALUE_KEY]};"
-
+        text_style = f"color: {self.app_color.hash_value};"
         desc_font_size = "font-size: 28px;\nfont-weight: normal;"
         precip_font_size = "font-size: 24px;\nfont-weight: normal;"
         temp_font_size = "font-size: 24px;\nfont-weight: normal;"
@@ -66,7 +65,7 @@ class ForecastEntryWidget(QFrame):
         self.setLayout(layout)
 
     def onUpdatedData(self, data: ForecastData):
-        icon_asset = AssetUtils.getIcon(self.app_color[AppColor.Keys.ASSETS_KEY], data.icon_type)
+        icon_asset = AssetUtils.getIcon(self.app_color.asset_folder, data.icon_type)
         icon_pixmap = QPixmap(icon_asset)
         width = self.icon_frame.width()
         height = self.icon_frame.height()
@@ -77,9 +76,11 @@ class ForecastEntryWidget(QFrame):
         if data.precip == "":
             self.precip_frame.setText(data.temp)
             self.temp_frame.setText("")
+
         else:
             self.precip_frame.setText(data.precip)
             self.temp_frame.setText(data.temp)
+
         self.day_frame.setText(data.day_time)
 
 
@@ -105,11 +106,9 @@ class ForecastWidget(QFrame):
         self.timer.start(config.wx_settings.forecast_refresh * 60 * 1000)
 
     def getForecast(self):
-        print("requesting forecast")
         self.weather_provider.getForecast(self.onUpdatedData)
 
     def onUpdatedData(self, data_list: list[ForecastData]):
-        print("updating forecast")
         count = min(self.layout().count(), len(data_list))
         for i in range(count):
             forecast_entry_widget = self.layout().itemAt(i).widget()
