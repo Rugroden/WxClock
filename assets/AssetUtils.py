@@ -73,6 +73,14 @@ class AssetUtils:
         return os.path.join(base_path, file_name)
 
     @staticmethod
+    def clearRadarCache():
+        path = AssetUtils.getRadarCachePath()
+        if os.path.exists(path):
+            for filename in os.listdir(path):
+                os.remove(os.path.join(path, filename))
+            os.rmdir(path)
+
+    @staticmethod
     def getColorPath(assets_color):
         return os.path.join(AssetUtils.getAssetsPath(), assets_color)
 

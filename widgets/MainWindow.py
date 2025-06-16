@@ -91,6 +91,7 @@ class MainWindow(QMainWindow):
 
         # Make it full screen.
         self.showFullScreen()
+        #self.show()
 
     def cleanup(self):
         self.clock_widget.cleanup()

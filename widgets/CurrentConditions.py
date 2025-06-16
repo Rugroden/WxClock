@@ -33,10 +33,10 @@ class CurrentConditions(QFrame):
         # Build a style for our views.
         font_mult = config.app_settings.font_mult
         text_style = f"color: {self.app_color.hash_value};"
-        attribution_font_size = f"font-size: {20 * font_mult}px;\nfont-weight: light;"
-        regular_font_size = f"font-size: {35 * font_mult};\nfont-weight: normal;"
-        desc_font_size = f"font-size: {40 * font_mult}px;\nfont-weight: normal;"
-        temp_font_size = f"font-size: {70 * font_mult}px;\nfont-weight: normal;\nfont-family: sans-serif;"
+        attribution_font_size = f"font-size: {20.0 * font_mult}px;\nfont-weight: light;"
+        regular_font_size = f"font-size: {35.0 * font_mult}px;\nfont-weight: normal;"
+        desc_font_size = f"font-size: {40.0 * font_mult}px;\nfont-weight: normal;"
+        temp_font_size = f"font-size: {70.0 * font_mult}px;\nfont-weight: normal;\nfont-family: sans-serif;"
 
         # Create our child widgets.
         self.icon_frame = QLabel(self)

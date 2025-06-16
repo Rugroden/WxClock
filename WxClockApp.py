@@ -4,6 +4,7 @@ import sys
 from PyQt6.QtWidgets import QApplication
 
 import Config
+from assets.AssetUtils import AssetUtils
 
 from widgets.MainWindow import MainWindow
 
@@ -22,6 +23,8 @@ config.configureBackground(
     screen_size.height(),
     backgound_file
 )
+
+AssetUtils.clearRadarCache()
 
 # Create a main window.
 main_window = MainWindow(config)

@@ -5,7 +5,7 @@ from PyQt6.QtGui import QPixmap, QResizeEvent
 from PyQt6.QtWidgets import QFrame, QLabel, QStackedLayout
 
 from assets.AssetUtils import AssetUtils
-from configs.ConfigUtils import Config, Location
+from configs.ConfigUtils import Config
 from maps.MapUtils import MapUtils
 from radars.RadarData import RadarData, SizeData
 from radars.RadarUtils import RadarUtils

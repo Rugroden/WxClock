@@ -4,7 +4,7 @@ from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QResizeEvent
 from PyQt6.QtWidgets import QFrame, QLabel
 
-from configs.ConfigUtils import AppColor, Config, Location
+from configs.ConfigUtils import Config
 
 class TextWidget(QFrame):
     class Debug:
@@ -27,7 +27,7 @@ class TextWidget(QFrame):
         if position == TextWidget.Position.HEADER:
             style = f"""
                 color: {self.app_settings.color.hash_value};
-                font-size: {64 * font_mult}px;
+                font-size: {64.0 * font_mult}px;
                 font-weight: normal;
             """
             self.text_box.setStyleSheet(style)
@@ -42,7 +42,7 @@ class TextWidget(QFrame):
         else:
             style = f"""
                 color: {self.app_settings.color.hash_value};
-                font-size: {50 * font_mult}px;
+                font-size: {50.0 * font_mult}px;
                 font-weight: normal;
             """
             self.text_box.setStyleSheet(style)
@@ -67,6 +67,4 @@ class TextWidget(QFrame):
                 sup = 'rd'
 
             date_string = self.app_settings.date_format.format(now, sup)
-            #self.text_box.setText(date_string)
-            self.text_box.setText(TextWidget.Debug.LONG_TEXT)
-
+            self.text_box.setText(date_string)

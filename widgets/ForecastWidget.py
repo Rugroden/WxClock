@@ -24,10 +24,10 @@ class ForecastEntryWidget(QFrame):
         # Build a style for our views.
         font_mult = config.app_settings.font_mult
         text_style = f"color: {self.app_color.hash_value};"
-        desc_font_size = f"font-size: {28 * font_mult}px;\nfont-weight: normal;"
-        precip_font_size = f"font-size: {24 * font_mult}px;\nfont-weight: normal;"
-        temp_font_size = f"font-size: {24 * font_mult}px;\nfont-weight: normal;"
-        day_font_size = f"font-size: {20 * font_mult}px;\nfont-weight: light;"
+        desc_font_size = f"font-size: {28.0 * font_mult}px;\nfont-weight: normal;"
+        precip_font_size = f"font-size: {24.0 * font_mult}px;\nfont-weight: normal;"
+        temp_font_size = f"font-size: {24.0 * font_mult}px;\nfont-weight: normal;"
+        day_font_size = f"font-size: {20.0 * font_mult}px;\nfont-weight: light;"
 
         self.icon_frame = QLabel(self)
         self.icon_frame.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -49,15 +49,26 @@ class ForecastEntryWidget(QFrame):
         self.day_frame.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         layout = QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(0, 10, 0, 10)
         layout.addWidget(self.icon_frame)
+
         inner_frame = QFrame(self)
         inner_layout = QVBoxLayout()
         inner_layout.setContentsMargins(0, 0, 0, 0)
         inner_layout.addWidget(self.description_frame)
         inner_layout.addWidget(self.precip_frame)
-        inner_layout.addWidget(self.temp_frame)
-        inner_layout.addWidget(self.day_frame)
+
+        temp_day_frame = QFrame(self)
+        temp_day_layout = QHBoxLayout()
+        temp_day_layout.setContentsMargins(0, 0, 0, 0)
+        temp_day_layout.addWidget(self.temp_frame)
+        temp_day_layout.addWidget(self.day_frame)
+        temp_day_layout.setStretch(0, 2)
+        temp_day_layout.setStretch(2, 2)
+        temp_day_frame.setLayout(temp_day_layout)
+
+        inner_layout.addWidget(temp_day_frame)
+
         inner_frame.setLayout(inner_layout)
         layout.addWidget(inner_frame)
         layout.setStretch(0, 1)
