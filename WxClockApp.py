@@ -1,6 +1,8 @@
 import os
 import sys
 
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import QApplication
 
 import Config
@@ -11,6 +13,7 @@ from widgets.MainWindow import MainWindow
 
 # Setup the application.
 clock_app = QApplication(sys.argv)
+QApplication.setOverrideCursor(QCursor(Qt.CursorShape.BlankCursor))
 
 # Grab the screen size for background purposes.
 screen_size = clock_app.primaryScreen().size()
