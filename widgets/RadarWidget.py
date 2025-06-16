@@ -36,11 +36,12 @@ class RadarWidget(QFrame):
         layout.setCurrentWidget(self.radar_frame)
         self.setLayout(layout)
 
-        self.animation_timer = QTimer()
-        self.animation_timer.timeout.connect(self.tick)
-        self.animation_timer.start(1000)
+        if self.radar_refresh > 0:
+            self.animation_timer = QTimer()
+            self.animation_timer.timeout.connect(self.tick)
+            self.animation_timer.start(1000)
 
-        self.radar_fetch_timer = QTimer()
+            self.radar_fetch_timer = QTimer()
 
     def getShrunkenSize(self, size: QSize) -> QSize:
         temp_size = size
@@ -81,14 +82,15 @@ class RadarWidget(QFrame):
             size
         )
 
-        # Now that our sizes are set, we can set up the radar provider.
-        size_data = SizeData(self.file_zoom, size)
-        self.radar_provider.setSize(size_data)
+        if self.radar_refresh > 0:
+            # Now that our sizes are set, we can set up the radar provider.
+            size_data = SizeData(self.file_zoom, size)
+            self.radar_provider.setSize(size_data)
 
-        # Now that we have everything setup, we can fetch once and setup the timer.
-        self.getRadar()
-        self.radar_fetch_timer.timeout.connect(self.getRadar)
-        self.radar_fetch_timer.start(self.radar_refresh * 60 * 1000)
+            # Now that we have everything setup, we can fetch once and setup the timer.
+            self.getRadar()
+            self.radar_fetch_timer.timeout.connect(self.getRadar)
+            self.radar_fetch_timer.start(self.radar_refresh * 60 * 1000)
 
     def getRadar(self):
         self.radar_provider.getRadar(self.onRadar)
@@ -106,5 +108,6 @@ class RadarWidget(QFrame):
             self.radar_data_index %= len(self.radar_data_list)
 
     def cleanup(self):
-        self.animation_timer.stop()
-        self.radar_fetch_timer.stop()
+        if self.radar_refresh > 0:
+            self.animation_timer.stop()
+            self.radar_fetch_timer.stop()
