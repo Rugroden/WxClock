@@ -22,4 +22,4 @@ The clock is semi customizable with digital and analog settings.
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Acknowledgements
-___* [PiClock](https://github.com/n0bel/PiClock)
+* [PiClock](https://github.com/n0bel/PiClock)
