@@ -18,6 +18,7 @@ class RadarWidget(QFrame):
         location = config.app_settings.location
         self.latitude = location.latitude
         self.longitude = location.longitude
+        self.show_map = config.wx_settings.show_map
         self.map_provider = MapUtils.getMapProvider(config)
         self.radar_provider = RadarUtils.getRadarProvider(config)
         self.radar_refresh = config.wx_settings.radar_refresh
@@ -74,13 +75,15 @@ class RadarWidget(QFrame):
     def resizeEvent(self, event: QResizeEvent):
         # On resize we kick off our map and radar stuff.
         size = self.getShrunkenSize(event.size())
-        self.map_provider.getMap(
-            self.setMap,
-            self.latitude,
-            self.longitude,
-            self.file_zoom,
-            size
-        )
+
+        if self.show_map:
+            self.map_provider.getMap(
+                self.setMap,
+                self.latitude,
+                self.longitude,
+                self.file_zoom,
+                size
+            )
 
         if self.radar_refresh > 0:
             # Now that our sizes are set, we can set up the radar provider.

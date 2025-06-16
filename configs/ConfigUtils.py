@@ -81,6 +81,7 @@ class WxSettings:
             radar_0_zoom: int = 10,                # The zoom level for the top radar.
             radar_1_zoom: int = 6,                 # The zoom level for the bottom radar.
 
+            show_map: bool = False,                # Hide map = False, show map = True.
             map_provider: int = None,              # MapUtils.ProviderKey value.
             map_api_key:str = "",                  # API key for that provider.
             marker_icon:str = "teardrop_dot.png",  # Icon for marker.
@@ -102,6 +103,7 @@ class WxSettings:
         self.radar_smoothing = radar_smoothing
         self.radar_snow = radar_snow
 
+        self.show_map = show_map
         self.map_provider = map_provider
         self.map_api_key = map_api_key
         self.marker_icon = marker_icon

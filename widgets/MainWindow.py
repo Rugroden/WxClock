@@ -89,6 +89,8 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self.background_frame)
 
+        self.setCursor(Qt.CursorShape.BlankCursor)
+
         # Make it full screen.
         self.showFullScreen()
         #self.show()

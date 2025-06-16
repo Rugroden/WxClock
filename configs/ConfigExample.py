@@ -39,6 +39,7 @@ wx_settings = WxSettings(
     radar_0_zoom = 10,
     radar_1_zoom = 6,
 
+    show_map = True,
     map_provider = MapProviderKey.GOOGLE_MAP,
     map_api_key = "GoogleMapAPIKey",
     marker_icon = "teardrop_dot.png",
