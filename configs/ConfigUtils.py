@@ -41,13 +41,15 @@ class AppSettings:
             color: AppColor,
             background_path: str,
             date_format: str = "{0:%A %B} {0.day}<sup>{1}</sup> {0.year}",
-            font_family: str = "sans-serif"
+            font_family: str = "sans-serif",
+            font_mult: float = 1.0
     ):
         self.location = location
         self.color = color
         self.background = background_path
         self.date_format = date_format
         self.font_family = font_family
+        self.font_mult = font_mult
 
 
 class ClockSettings:

@@ -1,5 +1,4 @@
 from PyQt6.QtCore import QSize
-from PyQt6.QtGui import QPixmap
 
 class SizeData:
     def __init__(self, zoom: int, size: QSize):

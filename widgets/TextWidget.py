@@ -7,6 +7,9 @@ from PyQt6.QtWidgets import QFrame, QLabel
 from configs.ConfigUtils import AppColor, Config, Location
 
 class TextWidget(QFrame):
+    class Debug:
+        LONG_TEXT = "Wednesday November 28th 2025"
+
     class Position:
         HEADER = 0
         FOOTER = 1
@@ -20,10 +23,11 @@ class TextWidget(QFrame):
         self.text_box = QLabel(self)
         self.text_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        font_mult = self.app_settings.font_mult
         if position == TextWidget.Position.HEADER:
             style = f"""
                 color: {self.app_settings.color.hash_value};
-                font-size: 64px;
+                font-size: {64 * font_mult}px;
                 font-weight: normal;
             """
             self.text_box.setStyleSheet(style)
@@ -38,7 +42,7 @@ class TextWidget(QFrame):
         else:
             style = f"""
                 color: {self.app_settings.color.hash_value};
-                font-size: 50px;
+                font-size: {50 * font_mult}px;
                 font-weight: normal;
             """
             self.text_box.setStyleSheet(style)
@@ -63,5 +67,6 @@ class TextWidget(QFrame):
                 sup = 'rd'
 
             date_string = self.app_settings.date_format.format(now, sup)
-            self.text_box.setText(date_string)
+            #self.text_box.setText(date_string)
+            self.text_box.setText(TextWidget.Debug.LONG_TEXT)
 

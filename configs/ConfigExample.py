@@ -13,7 +13,8 @@ app_settings = AppSettings(
     color = AppColorUtils.RED,
     background_path = "default.jpg",
     date_format = "{0:%A %B} {0.day}<sup>{1}</sup> {0.year}",
-    font_family = "sans-serif"
+    font_family = "sans-serif",
+    font_mult = 1.0
 )
 
 clock_settings = ClockSettings(

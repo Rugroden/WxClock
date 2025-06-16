@@ -96,7 +96,7 @@ class RainViewerRadarProvider(RadarProvider):
             json_bytes = self.reply.readAll()
             json_string = json_bytes.data().decode("utf-8")
             if json_string == "":
-                print("JSON string is empty for Rain Viewer timestamp reply.")
+                print(f"JSON string is empty for Rain Viewer timestamp reply: {self.reply.url()}")
                 return
             json_obj = json.loads(json_string)
 
