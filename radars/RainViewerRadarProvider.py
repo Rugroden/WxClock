@@ -135,8 +135,8 @@ class RainViewerRadarProvider(RadarProvider):
             # Now we can build all the actual urls we need.
             for item in self.tile_path_list:
                 url_list = []
-                for x in self.x_list:
-                    for y in self.y_list:
+                for y in self.y_list:
+                    for x in self.x_list:
                         url = f"{host}{item.path}/{Utils.MERCATOR_RANGE}/"
                         url += f"{self.zoom}/{x}/{y}/{self.radar_color}/{self.radar_smoothing}_{self.radar_snow}.png"
 
@@ -242,7 +242,7 @@ class RainViewerRadarProvider(RadarProvider):
         for y in range(0, self.total_height, Utils.MERCATOR_RANGE):
             for x in range(0, self.total_width, Utils.MERCATOR_RANGE):
                 if self.tile_image_list[tile_index].format() == QImage.Format.Format_ARGB32:
-                    painter.drawImage(y, x, self.tile_image_list[tile_index])
+                    painter.drawImage(x, y, self.tile_image_list[tile_index])
 
                 tile_index += 1
 
