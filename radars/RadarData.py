@@ -24,9 +24,9 @@ class TileUrlsData:
         return self.timestamp < other.timestamp
 
 class RadarData:
-    def __init__(self, timestamp: int, image: QPixmap):
+    def __init__(self, timestamp: int, file_path: str):
         self.timestamp = timestamp
-        self.image = image
+        self.file_path = file_path
 
     def __lt__(self, other):
         return self.timestamp < other.timestamp

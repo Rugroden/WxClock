@@ -3,5 +3,5 @@ __pycache__/
 
 .idea/
 Config.py
-assets/map_cache
-assets/tile_cache
+assets/map_cache/*
+assets/radar_cache/*

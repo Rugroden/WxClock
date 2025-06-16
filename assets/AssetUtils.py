@@ -6,7 +6,7 @@ ASSETS_DIR = ""
 BACKGROUNDS_DIR = "backgrounds"
 ICONS_DIR = "icons"
 MAP_CACHE_DIR = "map_cache"
-TILE_CACHE_DIR = "tile_cache"
+RADAR_CACHE_DIR = "radar_cache"
 
 
 class Icons:
@@ -37,7 +37,10 @@ class AssetUtils:
 
     @staticmethod
     def getMapCachePath():
-        return os.path.join(AssetUtils.getAssetsPath(), MAP_CACHE_DIR)
+        path = os.path.join(AssetUtils.getAssetsPath(), MAP_CACHE_DIR)
+        if not os.path.exists(path):
+            os.makedirs(path)
+        return path
 
     @staticmethod
     def getCachedMapFile(
@@ -51,18 +54,22 @@ class AssetUtils:
         return os.path.join(base_path, file_name)
 
     @staticmethod
-    def getTileCachePath():
-        return os.path.join(AssetUtils.getAssetsPath(), TILE_CACHE_DIR)
+    def getRadarCachePath():
+        path = os.path.join(AssetUtils.getAssetsPath(), RADAR_CACHE_DIR)
+        if not os.path.exists(path):
+            os.makedirs(path)
+        return path
 
     @staticmethod
-    def getCachedTileFile(
+    def getCachedRadarFile(
+            timestamp: int,
             latitude: float,
             longitude: float,
             zoom: int,
             size: QSize
     ):
-        base_path = AssetUtils.getTileCachePath()
-        file_name = f"{latitude}_{longitude}_{zoom}_{size.width()}x{size.height()}.png"
+        base_path = AssetUtils.getRadarCachePath()
+        file_name = f"{timestamp}_{latitude}_{longitude}_{zoom}_{size.width()}x{size.height()}.png"
         return os.path.join(base_path, file_name)
 
     @staticmethod

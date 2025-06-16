@@ -1,11 +1,13 @@
 import json
+import os
 
 from datetime import datetime
-from PyQt6.QtCore import QSize, QUrl
+from PyQt6.QtCore import QSize, QUrl, QFile
 from PyQt6.QtGui import QColor, QFont, QImage, QPainter, QPixmap
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from typing import Callable
 
+from assets.AssetUtils import AssetUtils
 from configs.ConfigUtils import Config
 from radars.MercatorProjection import LatLng, Utils
 from radars.RadarData import RadarData, TilePathData, TileUrlsData, SizeData
@@ -126,11 +128,15 @@ class RainViewerRadarProvider(RadarProvider):
                     break
 
             # Sort the things and then prune off any older entries.
+            # We can also prune old cache images.
             self.timestamp_list.sort()
             self.tile_path_list.sort()
             while len(self.timestamp_list) > self.frame_count:
-                self.timestamp_list.pop(0)
+                timestamp = self.timestamp_list.pop(0)
                 self.tile_path_list.pop(0)
+                radar_file_name = AssetUtils.getCachedRadarFile(timestamp, self.latitude, self.longitude, self.zoom, self.rect_size)
+                if os.path.exists(radar_file_name):
+                    os.remove(radar_file_name)
 
             # Now we can build all the actual urls we need.
             for item in self.tile_path_list:
@@ -184,6 +190,12 @@ class RainViewerRadarProvider(RadarProvider):
                 if radar_data.timestamp == entry.timestamp:
                     skip_entry = True
                     break
+
+            radar_file_name = AssetUtils.getCachedRadarFile(entry.timestamp, self.latitude, self.longitude, self.zoom, self.rect_size)
+            if not skip_entry and os.path.exists(radar_file_name):
+                radar_data = RadarData(entry.timestamp, radar_file_name)
+                self.radar_data_list.append(radar_data)
+                skip_entry = True
 
             if skip_entry:
                 # We already have this image, so we don't need to re pull it.
@@ -261,5 +273,9 @@ class RainViewerRadarProvider(RadarProvider):
         painter.end()
 
         radar_pixmap = QPixmap(radar_image_2)
-        radar_data = RadarData(timestamp, radar_pixmap)
+        radar_file_name = AssetUtils.getCachedRadarFile(timestamp, self.latitude, self.longitude, self.zoom, self.rect_size)
+        cache_file = QFile(radar_file_name)
+        radar_pixmap.save(cache_file)
+
+        radar_data = RadarData(timestamp, radar_file_name)
         self.radar_data_list.append(radar_data)

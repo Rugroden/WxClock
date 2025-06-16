@@ -1,7 +1,7 @@
 import os
 from typing import Callable
 
-from PyQt6.QtCore import QUrl, QSize
+from PyQt6.QtCore import QUrl, QSize, QFile
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 
@@ -16,8 +16,15 @@ class GoogleMapProvider(MapProvider):
         self.app_color = config.app_settings.color.hex_value
         self.show_marker = config.wx_settings.show_marker
         self.marker_size = config.wx_settings.marker_size
-        self.on_map_callback = None
         self.net_man = QNetworkAccessManager(self)
+        self.on_map_callback = None
+        self.reply = None
+
+        # Things that get set when we call for a new map.
+        self.latitude = 0
+        self.longitude = 0
+        self.zoom = 0
+        self.size = QSize(0,0)
 
     def getMap(
             self,
@@ -29,11 +36,15 @@ class GoogleMapProvider(MapProvider):
     ):
         # API Docs: https://developers.google.com/maps/documentation/maps-static/start.
         self.on_map_callback = callback
+        self.latitude = latitude
+        self.longitude = longitude
+        self.zoom = zoom
+        self.size = size
 
         cached_map_file = AssetUtils.getCachedMapFile(latitude, longitude, zoom, size)
         if os.path.exists(cached_map_file):
             # DEBUGGING
-            #print(f"Using cached map file: {cached_map_file}")
+            print(f"Using cached map file: {cached_map_file}")
             callback(QPixmap(cached_map_file))
 
         else:
@@ -45,19 +56,35 @@ class GoogleMapProvider(MapProvider):
             if self.show_marker:
                 map_url += f"&markers=size:{self.marker_size}|color:{self.app_color}|{latitude},{longitude}"
             # DEBUGGING
-            #print(f"GoogleMapProvider.getMap(): {map_url}")
+            print(f"GoogleMapProvider.getMap(): {map_url}")
 
-            self.net_man.finished.connect(self.mapCallback)
+            if self.reply is not None:
+                print("GoogleMapProvider.getMap(): Aborting previous request.")
+                self.reply.abort()
+                self.reply = None
+
             request = QNetworkRequest(QUrl(map_url))
-            self.net_man.get(request)
+            self.reply = self.net_man.get(request)
+            self.reply.finished.connect(self.mapCallback)
 
-    def mapCallback(self, reply: QNetworkReply):
-        pixmap = QPixmap()
-        pixmap.loadFromData(reply.readAll())
+    def mapCallback(self):
+        if self.reply.error() == QNetworkReply.NetworkError.NoError:
+            pixmap = QPixmap()
+            pixmap.loadFromData(self.reply.readAll())
 
-        if callable(self.on_map_callback):
-            self.on_map_callback(pixmap)
-            self.on_map_callback = None
+            # Save this to our cache.
+            cache_file_name = AssetUtils.getCachedMapFile(self.latitude, self.longitude, self.zoom, self.size)
+            print(f"GoogleMapProvider.mapCallback(): saving map cache: {cache_file_name}")
+            cache_file = QFile(cache_file_name)
+            success = pixmap.save(cache_file)
 
-        else:
-            print(f"GoogleMapProvider.mapCallback(): Bad callback = {self.on_map_callback}")
+            if success:
+                print(f"GoogleMapProvider.mapCallback(): map cache saved")
+            else:
+                print(f"GoogleMapProvider.mapCallback(): map cache not saved")
+
+            if callable(self.on_map_callback):
+                self.on_map_callback(pixmap)
+
+            else:
+                print(f"GoogleMapProvider.mapCallback(): Bad callback = {self.on_map_callback}")

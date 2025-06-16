@@ -99,7 +99,9 @@ class RadarWidget(QFrame):
     def tick(self):
         if len(self.radar_data_list) > 0:
             radar_data = self.radar_data_list[self.radar_data_index]
-            self.radar_frame.setPixmap(radar_data.image)
+            radar_pixmap = QPixmap()
+            radar_pixmap.load(radar_data.file_path)
+            self.radar_frame.setPixmap(radar_pixmap)
             self.radar_data_index += 1
             self.radar_data_index %= len(self.radar_data_list)
 
