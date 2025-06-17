@@ -137,11 +137,14 @@ class WeatherDataUtils:
         return cardinal_direction
 
     @staticmethod
-    def getMostFrequentItem(item_list: list) -> str:
+    def getMostFrequentItem(item_list: list[str]) -> str:
         # This function is used for forecasts to get the most common icon and description.
         # List to dict[key, counts].
         item_dict = dict((i, item_list.count(i)) for i in item_list)
         # Sort by counts.
         sorted_dict = sorted(item_dict, key=item_dict.get, reverse=True)
         # Get first (most counted) item.
-        return sorted_dict[0]
+        if len(sorted_dict):
+            return sorted_dict[0]
+        else:
+            return ""
