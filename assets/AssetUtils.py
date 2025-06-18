@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta
 
 from PyQt6.QtCore import QSize
 
@@ -74,11 +75,15 @@ class AssetUtils:
 
     @staticmethod
     def clearRadarCache():
-        path = AssetUtils.getRadarCachePath()
-        if os.path.exists(path):
-            for filename in os.listdir(path):
-                os.remove(os.path.join(path, filename))
-            os.rmdir(path)
+        cache_path = AssetUtils.getRadarCachePath()
+        if os.path.exists(cache_path):
+            now = datetime.now()
+            for file_name in os.listdir(cache_path):
+                file_name_parts = file_name.split("_")
+                file_time = datetime.fromtimestamp(int(file_name_parts[0]))
+                # We can delete anything that is older than 2 hours.
+                if file_time + timedelta(hours = 2) < now:
+                    os.remove(os.path.join(cache_path, file_name))
 
     @staticmethod
     def getColorPath(assets_color):
