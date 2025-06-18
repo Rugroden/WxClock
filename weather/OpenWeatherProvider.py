@@ -7,7 +7,7 @@ from PyQt6.QtCore import QUrl
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 
 from assets.AssetUtils import Icons
-from configs.ConfigUtils import Config, Location
+from configs.ConfigUtils import Config
 from weather.WeatherProvider import WeatherProvider
 from weather.WeatherData import CurrentConditionsData, DEGREE_SYM, ForecastData, WeatherDataUtils
 
@@ -181,65 +181,69 @@ class OpenWeatherProvider(WeatherProvider):
         )
 
     def buildDayDataFromJson(self, json_object_list) -> ForecastData:
-        icon_types = []
-        icon_descriptions = []
-        precip_prob = 0
-        rain_accum = 0
-        snow_accum = 0
-        temp_high = -999
-        temp_low = 999
-        timestamp_string = ""
+        if len(json_object_list) == 0:
+            return ForecastData.getErrorData("Error: Empty JSON list.")
 
-        for json_object in json_object_list:
-            icon_types.append(json_object["weather"][0]["icon"])
-            icon_descriptions.append(json_object["weather"][0]["description"].title())
+        else:
+            icon_types = []
+            icon_descriptions = []
+            precip_prob = 0
+            rain_accum = 0
+            snow_accum = 0
+            temp_high = -999
+            temp_low = 999
+            timestamp_string = ""
 
-            if "pop" in json_object:
-                probability = json_object["pop"] * 100.0
+            for json_object in json_object_list:
+                icon_types.append(json_object["weather"][0]["icon"])
+                icon_descriptions.append(json_object["weather"][0]["description"].title())
 
-                if probability > 0.0:
-                    precip_prob += probability
+                if "pop" in json_object:
+                    probability = json_object["pop"] * 100.0
 
-                    if "snow" in json_object:
-                        snow_accum += json_object["snow"]["3h"]
-                    if "rain" in json_object:
-                        rain_accum += json_object["rain"]["3h"]
+                    if probability > 0.0:
+                        precip_prob += probability
 
-            temp = json_object["main"]["temp"]
-            if temp > temp_high:
-                temp_high = temp
-            if temp < temp_low:
-                temp_low = temp
+                        if "snow" in json_object:
+                            snow_accum += json_object["snow"]["3h"]
+                        if "rain" in json_object:
+                            rain_accum += json_object["rain"]["3h"]
 
-            if timestamp_string == "":
-                timestamp_string = "{0:%A}".format(datetime.fromtimestamp(json_object["dt"]))
+                temp = json_object["main"]["temp"]
+                if temp > temp_high:
+                    temp_high = temp
+                if temp < temp_low:
+                    temp_low = temp
 
-        icon_type = self.getIconType(WeatherDataUtils.getMostFrequentItem(icon_types))
-        icon_description = WeatherDataUtils.getMostFrequentItem(icon_descriptions)
+                if timestamp_string == "":
+                    timestamp_string = "{0:%A}".format(datetime.fromtimestamp(json_object["dt"]))
+
+            icon_type = self.getIconType(WeatherDataUtils.getMostFrequentItem(icon_types))
+            icon_description = WeatherDataUtils.getMostFrequentItem(icon_descriptions)
 
 
-        precip_string = ""
-        precip_prob = precip_prob / len(json_object_list)
-        if precip_prob > 0.0:
-            precip_type = "Rain" if rain_accum > snow_accum else "Snow"
-            precip_accum = rain_accum if rain_accum > snow_accum else snow_accum
-            precip_unit = "mm"
-            if not self.wx_settings.is_metric:
-                precip_unit = "in"
-                precip_accum = WeatherDataUtils.millimetersToInches(precip_accum)
+            precip_string = ""
+            precip_prob = precip_prob / len(json_object_list)
+            if precip_prob > 0.0:
+                precip_type = "Rain" if rain_accum > snow_accum else "Snow"
+                precip_accum = rain_accum if rain_accum > snow_accum else snow_accum
+                precip_unit = "mm"
+                if not self.wx_settings.is_metric:
+                    precip_unit = "in"
+                    precip_accum = WeatherDataUtils.millimetersToInches(precip_accum)
 
-            precip_string = f"{precip_prob:.0f}% {precip_type} {precip_accum:.2f}{precip_unit}"
+                precip_string = f"{precip_prob:.0f}% {precip_type} {precip_accum:.2f}{precip_unit}"
 
-        temp_unit = "C" if self.wx_settings.is_metric else "F"
-        temp_string = f"{temp_high:.1f}{DEGREE_SYM}{temp_unit}/{temp_low:.1f}{DEGREE_SYM}{temp_unit}"
+            temp_unit = "C" if self.wx_settings.is_metric else "F"
+            temp_string = f"{temp_high:.1f}{DEGREE_SYM}{temp_unit}/{temp_low:.1f}{DEGREE_SYM}{temp_unit}"
 
-        return ForecastData(
-            icon_type,
-            icon_description,
-            precip_string,
-            temp_string,
-            timestamp_string
-        )
+            return ForecastData(
+                icon_type,
+                icon_description,
+                precip_string,
+                temp_string,
+                timestamp_string
+            )
 
     def getCurrentConditions(self, on_finished_callback: Callable[[list[CurrentConditionsData]], None]):
         # API Doc: https://openweathermap.org/current
