@@ -17,9 +17,8 @@ class ClockWidget(QFrame):
         self.clock_settings = config.clock_settings
         # last_time_string is for knowing when to update the digital clock.
         self.last_time_string = ""
-        # These are for knowing what to update in the analog clock.
+        # This is for knowing when to update in the analog clock's minute and hour hands.
         self.last_minute = -1
-        self.last_hour = -1
 
         if self.clock_settings.is_digital:
             # The digital clock is a single text widget
@@ -120,27 +119,27 @@ class ClockWidget(QFrame):
         else:
             # The second hand always gets updated.
             second_angle = now.second * 6
-            second_hand_pixmap = self.second_hand_pixmap.transformed(
+            second_hand_pixmap_rot = self.second_hand_pixmap.transformed(
                 QTransform().rotate(second_angle),
                 Qt.TransformationMode.SmoothTransformation
             )
-            self.second_hand_frame.setPixmap(second_hand_pixmap)
+            self.second_hand_frame.setPixmap(second_hand_pixmap_rot)
 
             if self.last_minute != now.minute:
                 self.last_minute = now.minute
                 minute_angle = now.minute * 6
-                minute_hand_pixmap = self.minute_hand_pixmap.transformed(
+                minute_hand_pixmap_rot = self.minute_hand_pixmap.transformed(
                     QTransform().rotate(minute_angle),
                     Qt.TransformationMode.SmoothTransformation
                 )
-                self.minute_hand_frame.setPixmap(minute_hand_pixmap)
+                self.minute_hand_frame.setPixmap(minute_hand_pixmap_rot)
 
                 hour_angle = ((now.hour % 12) + now.minute / 60.0) * 30.0
-                hour_hand_pixmap = self.hour_hand_pixmap.transformed(
+                hour_hand_pixmap_rot = self.hour_hand_pixmap.transformed(
                     QTransform().rotate(hour_angle),
                     Qt.TransformationMode.SmoothTransformation
                 )
-                self.hour_hand_frame.setPixmap(hour_hand_pixmap)
+                self.hour_hand_frame.setPixmap(hour_hand_pixmap_rot)
 
     def cleanup(self):
         self.timer.stop()

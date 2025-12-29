@@ -100,9 +100,8 @@ class OpenWeatherProvider(WeatherProvider):
                 for i in range(0, 3):
                     data_list.append(self.buildHourlyDataFromJson(json_obj["list"][i]))
 
-                # Days run 6am to 6am. Grab today.
                 today = datetime.now()
-                day_start = datetime(today.year, today.month, today.day, 6, 0, 0)
+                day_start = datetime(today.year, today.month, today.day, 0, 0, 0)
                 # We want to butt up against tomorrow, not be tomorrow, so we do a day minus a second.
                 today_seconds = (60 * 60 * 24) - 1
                 day_end = day_start + timedelta(0, today_seconds)

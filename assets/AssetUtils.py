@@ -7,6 +7,7 @@ ASSETS_DIR = ""
 BACKGROUNDS_DIR = "backgrounds"
 ICONS_DIR = "icons"
 MAP_CACHE_DIR = "map_cache"
+MARKERS_DIR = "markers"
 RADAR_CACHE_DIR = "radar_cache"
 
 
@@ -52,6 +53,19 @@ class AssetUtils:
     ):
         base_path = AssetUtils.getMapCachePath()
         file_name = f"{latitude}_{longitude}_{zoom}_{size.width()}x{size.height()}.png"
+        return os.path.join(base_path, file_name)
+
+    @staticmethod
+    def getMarkersPath():
+        path = os.path.join(AssetUtils.getAssetsPath(), MARKERS_DIR)
+        if not os.path.exists(path):
+            os.makedirs(path)
+        return path
+
+    @staticmethod
+    def getMarkerFile(name: str):
+        base_path = AssetUtils.getMarkersPath()
+        file_name = f"{name}.png"
         return os.path.join(base_path, file_name)
 
     @staticmethod

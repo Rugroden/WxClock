@@ -53,8 +53,9 @@ class GoogleMapProvider(MapProvider):
             map_url += f"&zoom={zoom}"
             map_url += f"&size={size.width()}x{size.height()}"
             map_url += f"&maptype=hybrid"
-            if self.show_marker:
-                map_url += f"&markers=size:{self.marker_size}|color:{self.app_color}|{latitude},{longitude}"
+            # Added the marker to its own image frame.
+            #if self.show_marker:
+            #    map_url += f"&markers=size:{self.marker_size}|color:{self.app_color}|{latitude},{longitude}"
             # DEBUGGING
             print(f"GoogleMapProvider.getMap(): {map_url}")
 

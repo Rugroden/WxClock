@@ -1,9 +1,11 @@
+import math
 import os
 
 from PyQt6.QtCore import QSize, QSizeF, Qt, QTimer
-from PyQt6.QtGui import QPixmap, QResizeEvent
-from PyQt6.QtWidgets import QFrame, QLabel, QStackedLayout
+from PyQt6.QtGui import QPixmap, QResizeEvent, QColor, QImage, QRgba64
+from PyQt6.QtWidgets import QFrame, QLabel, QStackedLayout, QSizePolicy
 
+import DebugUtils
 from assets.AssetUtils import AssetUtils
 from configs.ConfigUtils import Config
 from maps.MapUtils import MapUtils
@@ -27,14 +29,34 @@ class RadarWidget(QFrame):
         self.zoom = zoom
         self.file_zoom = zoom
 
-        self.map_frame = QLabel(self)
-        self.radar_frame = QLabel(self)
+        self.map_frame = QLabel()
+        self.radar_frame = QLabel()
 
-        layout = QStackedLayout(self)
+        self.marker_frame = QLabel()
+        self.show_marker = config.wx_settings.show_map and config.wx_settings.show_marker
+        if self.show_marker:
+            self.marker_image = QImage(AssetUtils.getMarkerFile("teardrop_dot"))
+            # Color the stupid marker.
+            app_color = config.app_settings.color.rgba
+            (acr, acg, acb, aca) = QColor.fromRgb(app_color[0], app_color[1], app_color[2], app_color[3]).getRgbF()
+            for x in range (0, self.marker_image.width()):
+                for y in range (0, self.marker_image.height()):
+                    (r, g, b, a)= self.marker_image.pixelColor(x, y).getRgbF()
+                    r = r * acr
+                    g = g * acg
+                    b = b * acb
+                    self.marker_image.setPixel(x, y, QColor.fromRgbF(r, g, b, a).rgba())
+
+            self.marker_frame.setPixmap(QPixmap.fromImage(self.marker_image))
+            self.marker_frame.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            self.current_marker = self.marker_image
+
+        layout = QStackedLayout()
+        layout.setStackingMode(QStackedLayout.StackingMode.StackAll)
         layout.addWidget(self.map_frame)
         layout.addWidget(self.radar_frame)
-        layout.setStackingMode(QStackedLayout.StackingMode.StackAll)
-        layout.setCurrentWidget(self.radar_frame)
+        layout.addWidget(self.marker_frame)
         self.setLayout(layout)
 
         if self.radar_refresh > 0:
@@ -94,6 +116,12 @@ class RadarWidget(QFrame):
             self.getRadar()
             self.radar_fetch_timer.timeout.connect(self.getRadar)
             self.radar_fetch_timer.start(self.radar_refresh * 60 * 1000)
+
+        if self.show_marker:
+            marker_scaled_size = math.ceil(size.height() / 5)
+            print(f"marker_scaled_size: {marker_scaled_size}")
+            self.current_marker = self.marker_image.scaled(marker_scaled_size, marker_scaled_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            self.marker_frame.setPixmap(QPixmap.fromImage(self.current_marker))
 
     def getRadar(self):
         self.radar_provider.getRadar(self.onRadar)
