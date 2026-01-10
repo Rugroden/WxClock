@@ -81,6 +81,8 @@ class OpenWeatherProvider(WeatherProvider):
         self.forecast_reply.finished.connect(self.forecastCallback)
 
     def forecastCallback(self):
+        # The data returned by the forecast call is in 3 hour increments,
+        # where the data in each item is representative of the 3 hours _preceding_ the timestamp
         data_list = []
         if self.forecast_reply.error() != QNetworkReply.NetworkError.NoError:
             for _ in range(9):
@@ -101,28 +103,44 @@ class OpenWeatherProvider(WeatherProvider):
                     data_list.append(self.buildHourlyDataFromJson(json_obj["list"][i]))
 
                 today = datetime.now()
-                day_start = datetime(today.year, today.month, today.day, 0, 0, 0)
-                # We want to butt up against tomorrow, not be tomorrow, so we do a day minus a second.
+                # Add A second, because Midnight's 3 hour data is technically the previous day's data.
+                day_start = datetime(today.year, today.month, today.day, 0, 0, 1)
+                # We want to grab midnight, because the data is technically representing the _preceding_ three hours.
+                # So the midnight timestamp is actually data that is part of the previous day.
                 today_seconds = (60 * 60 * 24) - 1
                 day_end = day_start + timedelta(0, today_seconds)
 
                 # Separate the entries by day.
                 json_list = []
                 for item in json_obj["list"]:
-
                     item_timestamp = datetime.fromtimestamp(item["dt"])
-                    if day_start <= item_timestamp <= day_end:
+                    if day_start <= item_timestamp <= day_end :
                         json_list.append(item)
-                    else:
-                        data_list.append(self.buildDayDataFromJson(json_list))
-                        json_list = []
-                        json_list.append(item)
+                        print(f"index={json_obj["list"].index(item)} timestamp={item_timestamp}, day bounds=({day_start}, {day_end})")
+
+                    elif len(json_list) == 0:
+                        # There is no data for today, but we are still in today: 9pm-11:59pm.
+                        # So we scootch to tomorrow and add.
                         day_start += timedelta(1)
                         day_end += timedelta(1)
+                        json_list.append(item)
+                        #print(f"index={json_obj["list"].index(item)} timestamp={item_timestamp}, day bounds=({day_start}, {day_end})")
+
+                    else:
+                        print(f"Creating day for day bounds=({day_start}, {day_end})")
+                        data_list.append(self.buildDayDataFromJson(json_list))
+                        json_list = []
+                        day_start += timedelta(1)
+                        day_end += timedelta(1)
+                        json_list.append(item)
+                        #print(f"index={json_obj["list"].index(item)} timestamp={item_timestamp}, day bounds=({day_start}, {day_end})")
+
 
                     # If this was the last item and we haven't built a day for our list, do that.
                     if item == json_obj["list"][len(json_obj["list"]) - 1] and len(json_list) > 0:
                         data_list.append(self.buildDayDataFromJson(json_list))
+                        #print("Creating day for last item(s)")
+                        #print(f"index={json_obj["list"].index(item)} timestamp={item_timestamp}, day bounds=({day_start}, {day_end}).")
 
         if callable(self.forecast_callback):
             self.forecast_callback(data_list)
